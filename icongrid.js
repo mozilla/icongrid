@@ -884,8 +884,6 @@ IconGrid.prototype = {
       e.preventDefault();
       if(e.originalEvent.touches && e.originalEvent.touches.length) {
         e = e.originalEvent.touches[0];
-      } else if(e.originalEvent.changedTouches && e.originalEvent.changedTouches.length) {
-        e = e.originalEvent.changedTouches[0];
       }
       self._onMouseDown(e);
     });
@@ -893,9 +891,7 @@ IconGrid.prototype = {
 
     self.dashcontainer.bind("mousemove touchmove", function(e) {
       e.preventDefault();
-      if(e.originalEvent.touches && e.originalEvent.touches.length) {
-        e = e.originalEvent.touches[0];
-      } else if(e.originalEvent.changedTouches && e.originalEvent.changedTouches.length) {
+      if(e.originalEvent.changedTouches && e.originalEvent.changedTouches.length) {
         e = e.originalEvent.changedTouches[0];
       }
       self._onMouseMove(e);
@@ -909,6 +905,8 @@ IconGrid.prototype = {
       } else if(e.originalEvent.changedTouches && e.originalEvent.changedTouches.length) {
         e = e.originalEvent.changedTouches[0];
       }
+
+      if (!e) e = self._pageScrollEventObject;
       self._onMouseUp(e);
     });
 
