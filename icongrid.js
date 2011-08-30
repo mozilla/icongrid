@@ -122,7 +122,6 @@ IconGrid.prototype = {
   /////////////////////////////////////////////////////////
   _onMouseDown: function (e) {
     var self = this;
-    e.preventDefault();
     self._mouseDownTime = e.timeStamp;
     self._mouseDownHoldTimer = setTimeout(function (evt) {
       self._onMouseHold(evt);
@@ -882,34 +881,34 @@ IconGrid.prototype = {
 
 
     self.dashcontainer.bind("mousedown touchstart", function(e) {
+      e.preventDefault();
       if(e.originalEvent.touches && e.originalEvent.touches.length) {
         e = e.originalEvent.touches[0];
       } else if(e.originalEvent.changedTouches && e.originalEvent.changedTouches.length) {
         e = e.originalEvent.changedTouches[0];
       }
-
       self._onMouseDown(e);
     });
 
 
     self.dashcontainer.bind("mousemove touchmove", function(e) {
+      e.preventDefault();
       if(e.originalEvent.touches && e.originalEvent.touches.length) {
         e = e.originalEvent.touches[0];
       } else if(e.originalEvent.changedTouches && e.originalEvent.changedTouches.length) {
         e = e.originalEvent.changedTouches[0];
       }
-
       self._onMouseMove(e);
     });
 
 
     self.dashcontainer.bind("mouseup touchend", function(e) {
+      e.preventDefault();
       if(e.originalEvent.touches && e.originalEvent.touches.length) {
         e = e.originalEvent.touches[0];
       } else if(e.originalEvent.changedTouches && e.originalEvent.changedTouches.length) {
         e = e.originalEvent.changedTouches[0];
       }
-
       self._onMouseUp(e);
     });
 
