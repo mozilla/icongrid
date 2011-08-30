@@ -1,29 +1,13 @@
 
-html {
-  font-family: arial;
-  margin: 0px;
-  padding: 0px;
-}
-
-body {
-  margin: 0px;
-  border: 0px;
-  padding: 0px;
-  overflow: hidden;
-}
-
-
-
 .dashboardclipper {
   position: absolute;
   margin: 0px;
   border: 0px;
   padding: 0px;
-
-  width: 720;
-  height: 110;
+  width: 400;
+  height: 300;
   clip: rect(0px, 720px, 110px, 0px);
-  background: rgb(230, 230, 230);
+  /*background: rgb(230, 230, 230);*/
 }
 
 .dashboard {
@@ -44,14 +28,10 @@ body {
   overflow: hidden;
 }
 
-
 .appDisplayFrame {
   border: 0px;
   position: absolute;
 }
-
-
-
 
 .liftedApp {
   box-shadow: 2px 6px 10px 2px rgb(0, 0, 0);
@@ -59,8 +39,8 @@ body {
 }
       
 .highlighted {
-    background-color: rgba(255, 140, 60, 0.66) !important;
-  }
+  background-color: rgba(255, 140, 60, 0.66) !important;
+}
 
 
 .icon {
@@ -71,8 +51,6 @@ body {
 	border-radius: 4px;
 
   background-image: -moz-linear-gradient( rgba(245,245,245,1), rgba(175,175,175,1) );
-
-
 }
 
 .iconWrapper {
@@ -85,7 +63,8 @@ body {
   text-align:center;
   margin: auto;
   font-weight: bold;
-  color: #ccc;
+  /* 
+  color: #000;
   text-shadow: black 1px 1px;
+  */
 }
-
