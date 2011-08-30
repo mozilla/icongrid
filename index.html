@@ -113,8 +113,8 @@
         openItem: function(itemID) {
           var title = this.iconList[itemID]['itemTitle'];
           if (!title) title = "about:icongrid";
-          alert("You clicked on " + title + "!");
-        },
+            window.open("http://www.google.com?q=" + itemID);
+            },
 
         // if all your items have 'itemImgURL' and 'itemTitle' properties, then you don't need to implement these.
         // These get called when an item doesn't have the right properties.
