@@ -848,7 +848,7 @@ IconGrid.prototype = {
     });
 
     var itemTitle = theItem.itemTitle;
-    if (!itemTitle && self.datasource.getItemTitle) {
+    if (!itemTitle && self.datasource.getItemTitle) { 
       itemTitle = self.datasource.getItemTitle(Base32.decode(guid));
     }
     if (!itemTitle) itemTitle = "";
@@ -867,6 +867,13 @@ IconGrid.prototype = {
       width: self.layout.panelWidth,
       height: self.layout.panelHeight
     });
+
+    //prevent context menus
+    document.addEventListener("contextmenu", function (e) {
+      e.preventDefault();
+    }, true);
+
+
 
     self.dashcontainer.css({
       clip: "rect( 0px, " + self.layout.panelWidth + "px, " + self.layout.panelHeight + "px, 0px)"
@@ -889,30 +896,47 @@ IconGrid.prototype = {
       self._onMouseEnter(evt);
     });
 
-    document.addEventListener("contextmenu", function (e) {
-      e.preventDefault();
-    }, true);
-
-    document.addEventListener("touchstart", function (e) {
-      if (e.touches && e.touches.length) {
-        e.clientX = e.touches[0].clientX;
-        e.clientY = e.touches[0].clientY;
-        self._onMouseDown(e);
+    self.dashcontainer.bind('touchstart', function (evt) {
+      if (evt.touches && evt.touches.length) {
+        evt.clientX = evt.touches[0].clientX;
+        evt.clientY = evt.touches[0].clientY;
+        self._onMouseDown(evt);
       }
-    }, false);
+    });
 
-    document.addEventListener("touchmove", function (e) {
-      if (e.touches && e.touches.length) {
-        e.clientX = e.touches[0].clientX;
-        e.clientY = e.touches[0].clientY;
-        self._onMouseMove(e);
+    self.dashcontainer.bind('touchmove', function (evt) {
+      if (evt.touches && evt.touches.length) {
+        evt.clientX = evt.touches[0].clientX;
+        evt.clientY = evt.touches[0].clientY;
+        self._onMouseMove(evt);
       }
-    }, false);
+    });
 
-    document.addEventListener("touchend", function (e) {
-      //cached last move event
-      self._onMouseUp(self._pageScrollEventObject);
-    }, false);
+    self.dashcontainer.bind('touchend', function (evt) {
+       self._onMouseUp(self._pageScrollEventObject);
+    });
+
+
+    // document.addEventListener("touchstart", function (e) {
+    //   if (e.touches && e.touches.length) {
+    //     e.clientX = e.touches[0].clientX;
+    //     e.clientY = e.touches[0].clientY;
+    //     self._onMouseDown(e);
+    //   }
+    // }, false);
+
+    // document.addEventListener("touchmove", function (e) {
+    //   if (e.touches && e.touches.length) {
+    //     e.clientX = e.touches[0].clientX;
+    //     e.clientY = e.touches[0].clientY;
+    //     self._onMouseMove(e);
+    //   }
+    // }, false);
+
+    // document.addEventListener("touchend", function (e) {
+    //   //cached last move event
+    //   self._onMouseUp(self._pageScrollEventObject);
+    // }, false);
   }
 
 };
