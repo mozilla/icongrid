@@ -102,15 +102,6 @@
           }
         },
 
-        // handle requests for the dashboardstate
-        loadIconGridState: function(callback) {
-          callback(localStorage.getItem("fruitGrid"));
-        },
-
-        saveIconGridState: function(state) {
-          localStorage.setItem("fruitGrid", state);
-        },
-
         getItemList: function(callback) {
           var list = this.iconList;
 
