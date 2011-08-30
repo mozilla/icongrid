@@ -889,11 +889,11 @@ IconGrid.prototype = {
       self._onMouseEnter(evt);
     });
 
-    document.addEventListener("contextmenu", function (e) {
+    self.dashcontainer.addEventListener("contextmenu", function (e) {
       e.preventDefault();
     }, true);
 
-    document.addEventListener("touchstart", function (e) {
+    self.dashcontainer.addEventListener("touchstart", function (e) {
       if (e.touches && e.touches.length) {
         e.clientX = e.touches[0].clientX;
         e.clientY = e.touches[0].clientY;
@@ -901,7 +901,7 @@ IconGrid.prototype = {
       }
     }, false);
 
-    document.addEventListener("touchmove", function (e) {
+    self.dashcontainer.addEventListener("touchmove", function (e) {
       if (e.touches && e.touches.length) {
         e.clientX = e.touches[0].clientX;
         e.clientY = e.touches[0].clientY;
@@ -909,7 +909,7 @@ IconGrid.prototype = {
       }
     }, false);
 
-    document.addEventListener("touchend", function (e) {
+    self.dashcontainer.addEventListener("touchend", function (e) {
       //cached last move event
       self._onMouseUp(self._pageScrollEventObject);
     }, false);
