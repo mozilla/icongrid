@@ -677,7 +677,7 @@ IconGrid.prototype = {
       if (slot) {
         //console.log("found deleted app: " + guid + " " + self.gItems[guid].slot);
         //remove it from everywhere
-        self.gItems[guid] = undefined;
+        delete self.gItems[guid];
         self.dashboardState.pages[slot[0]][slot[1]] = undefined;
         if (self.gridItemCache[guid]) {
           //remove the objects from the dom
@@ -889,11 +889,11 @@ IconGrid.prototype = {
       self._onMouseEnter(evt);
     });
 
-    document.addEventListener("contextmenu", function (e) {
+    self.dashcontainer.addEventListener("contextmenu", function (e) {
       e.preventDefault();
     }, true);
 
-    document.addEventListener("touchstart", function (e) {
+    self.dashcontainer.addEventListener("touchstart", function (e) {
       if (e.touches && e.touches.length) {
         e.clientX = e.touches[0].clientX;
         e.clientY = e.touches[0].clientY;
@@ -901,7 +901,7 @@ IconGrid.prototype = {
       }
     }, false);
 
-    document.addEventListener("touchmove", function (e) {
+    self.dashcontainer.addEventListener("touchmove", function (e) {
       if (e.touches && e.touches.length) {
         e.clientX = e.touches[0].clientX;
         e.clientY = e.touches[0].clientY;
@@ -909,7 +909,7 @@ IconGrid.prototype = {
       }
     }, false);
 
-    document.addEventListener("touchend", function (e) {
+    self.dashcontainer.addEventListener("touchend", function (e) {
       //cached last move event
       self._onMouseUp(self._pageScrollEventObject);
     }, false);
@@ -917,49 +917,3 @@ IconGrid.prototype = {
 
 };
 
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//panel related port code
-//launch
-// if (self && self.port) {
-//   self.port.emit("launch", Base32.decode(guid));
-// } else {
-//   navigator.apps.mgmt.launch(Base32.decode(guid));
-// }
-
-//save dash state
-// if (self && self.port) {
-//   self.port.emit("saveState", state);
-// } else {
-//   navigator.apps.mgmt.saveState(self.dashboardState, function() {console.log("OWA: dashboard state saved");} );
-// }
-//get dashstate
-// //this callback is installed only if we are in a jetpack, and is called from this.dashboardRefresh above
-// if (self && self.port) {
-//   self.port.on("theState", receivedNewDashboardState);
-// }
-
-
-
-//First get the dashboard state, if there is one.  
-// this code works for regular window and jetpack panel
-// if (self && self.port) {
-//   self.port.emit("loadState");
-// } else {
-//   navigator.apps.mgmt.loadState(receivedNewDashboardState);
-// }
-
-
-
-//refresh list callbacks
-// if (self && self.port) {
-//   self.port.emit("getList");
-// } else {
-//   navigator.apps.mgmt.list( function (allApps) { interimRekeyDataset(allApps) });
-// }
-
-// //this callback is installed only if we are in a jetpack, and is called from receivedNewDashboardState above
-// if (self && self.port) {
-//   self.port.on("theList", interimRekeyDataset);
-// }
