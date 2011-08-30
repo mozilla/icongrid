@@ -906,8 +906,8 @@ IconGrid.prototype = {
 
     self.dashcontainer.bind('touchmove', function (evt) {
       if (evt.touches && evt.touches.length) {
-        evt.clientX = evt.touches[0].clientX;
-        evt.clientY = evt.touches[0].clientY;
+        evt.clientX = evt.originalevent.changedtouches[0].clientX;
+        evt.clientY = evt.originalevent.changedtouches[0].clientY;
         self._onMouseMove(evt);
       }
     });
