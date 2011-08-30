@@ -873,27 +873,27 @@ IconGrid.prototype = {
     });
     self.dashcontainer.append(self.dashboard);
 
-    // self.dashcontainer.mousedown(function (evt) {
-    //   self._onMouseDown(evt);
-    // });
-    // self.dashcontainer.mouseup(function (evt) {
-    //   self._onMouseUp(evt);
-    // });
-    // self.dashcontainer.mousemove(function (evt) {
-    //   self._onMouseMove(evt);
-    // });
-    // self.dashcontainer.mouseleave(function (evt) {
-    //   self._onMouseLeave(evt);
-    // });
-    // self.dashcontainer.mouseenter(function (evt) {
-    //   self._onMouseEnter(evt);
-    // });
+    self.dashcontainer.mousedown(function (evt) {
+      self._onMouseDown(evt);
+    });
+    self.dashcontainer.mouseup(function (evt) {
+      self._onMouseUp(evt);
+    });
+    self.dashcontainer.mousemove(function (evt) {
+      self._onMouseMove(evt);
+    });
+    self.dashcontainer.mouseleave(function (evt) {
+      self._onMouseLeave(evt);
+    });
+    self.dashcontainer.mouseenter(function (evt) {
+      self._onMouseEnter(evt);
+    });
 
-    self.dashcontainer.addEventListener("contextmenu", function (e) {
+    document.addEventListener("contextmenu", function (e) {
       e.preventDefault();
     }, true);
 
-    self.dashcontainer.addEventListener("touchstart", function (e) {
+    document.addEventListener("touchstart", function (e) {
       if (e.touches && e.touches.length) {
         e.clientX = e.touches[0].clientX;
         e.clientY = e.touches[0].clientY;
@@ -901,7 +901,7 @@ IconGrid.prototype = {
       }
     }, false);
 
-    self.dashcontainer.addEventListener("touchmove", function (e) {
+    document.addEventListener("touchmove", function (e) {
       if (e.touches && e.touches.length) {
         e.clientX = e.touches[0].clientX;
         e.clientY = e.touches[0].clientY;
@@ -909,7 +909,7 @@ IconGrid.prototype = {
       }
     }, false);
 
-    self.dashcontainer.addEventListener("touchend", function (e) {
+    document.addEventListener("touchend", function (e) {
       //cached last move event
       self._onMouseUp(self._pageScrollEventObject);
     }, false);
