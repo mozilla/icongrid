@@ -677,7 +677,7 @@ IconGrid.prototype = {
       if (slot) {
         //console.log("found deleted app: " + guid + " " + self.gItems[guid].slot);
         //remove it from everywhere
-        self.gItems[guid] = undefined;
+        delete self.gItems[guid];
         self.dashboardState.pages[slot[0]][slot[1]] = undefined;
         if (self.gridItemCache[guid]) {
           //remove the objects from the dom
@@ -917,49 +917,3 @@ IconGrid.prototype = {
 
 };
 
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//panel related port code
-//launch
-// if (self && self.port) {
-//   self.port.emit("launch", Base32.decode(guid));
-// } else {
-//   navigator.apps.mgmt.launch(Base32.decode(guid));
-// }
-
-//save dash state
-// if (self && self.port) {
-//   self.port.emit("saveState", state);
-// } else {
-//   navigator.apps.mgmt.saveState(self.dashboardState, function() {console.log("OWA: dashboard state saved");} );
-// }
-//get dashstate
-// //this callback is installed only if we are in a jetpack, and is called from this.dashboardRefresh above
-// if (self && self.port) {
-//   self.port.on("theState", receivedNewDashboardState);
-// }
-
-
-
-//First get the dashboard state, if there is one.  
-// this code works for regular window and jetpack panel
-// if (self && self.port) {
-//   self.port.emit("loadState");
-// } else {
-//   navigator.apps.mgmt.loadState(receivedNewDashboardState);
-// }
-
-
-
-//refresh list callbacks
-// if (self && self.port) {
-//   self.port.emit("getList");
-// } else {
-//   navigator.apps.mgmt.list( function (allApps) { interimRekeyDataset(allApps) });
-// }
-
-// //this callback is installed only if we are in a jetpack, and is called from receivedNewDashboardState above
-// if (self && self.port) {
-//   self.port.on("theList", interimRekeyDataset);
-// }
