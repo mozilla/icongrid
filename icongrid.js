@@ -873,21 +873,21 @@ IconGrid.prototype = {
     });
     self.dashcontainer.append(self.dashboard);
 
-    self.dashcontainer.mousedown(function (evt) {
-      self._onMouseDown(evt);
-    });
-    self.dashcontainer.mouseup(function (evt) {
-      self._onMouseUp(evt);
-    });
-    self.dashcontainer.mousemove(function (evt) {
-      self._onMouseMove(evt);
-    });
-    self.dashcontainer.mouseleave(function (evt) {
-      self._onMouseLeave(evt);
-    });
-    self.dashcontainer.mouseenter(function (evt) {
-      self._onMouseEnter(evt);
-    });
+    // self.dashcontainer.mousedown(function (evt) {
+    //   self._onMouseDown(evt);
+    // });
+    // self.dashcontainer.mouseup(function (evt) {
+    //   self._onMouseUp(evt);
+    // });
+    // self.dashcontainer.mousemove(function (evt) {
+    //   self._onMouseMove(evt);
+    // });
+    // self.dashcontainer.mouseleave(function (evt) {
+    //   self._onMouseLeave(evt);
+    // });
+    // self.dashcontainer.mouseenter(function (evt) {
+    //   self._onMouseEnter(evt);
+    // });
 
     self.dashcontainer.addEventListener("contextmenu", function (e) {
       e.preventDefault();
