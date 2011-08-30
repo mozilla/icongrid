@@ -96,7 +96,7 @@ function IconGrid(name, hostElement, datasource, layout) {
   this._mouseDragoutTimer; //timer that retains the mouse for a brief time after they user drags out of the window
   this._pageScrollTimer; //timer that retains the mouse for a brief time after they user drags out of the window
   this._pageScrollDelay = false; //true if scrolling to new page should wait, false if it can go ahead
-  this._pageScrollEventObject; //sigh, this is a cached event object, used for triggering multi-page scrolls when the user doesn't actually move the mouse.
+  this.lastMouseEvent; //sigh, this is a cached event object, used for triggering multi-page scrolls when the user doesn't actually move the mouse.
   
   // the id of the currently dragged app, or undefined if none
   this._draggedApp;
@@ -121,7 +121,9 @@ IconGrid.prototype = {
 
   /////////////////////////////////////////////////////////
   _onMouseDown: function (e) {
+    e.preventDefault();
     var self = this;
+
     self._mouseDownTime = e.timeStamp;
     self._mouseDownHoldTimer = setTimeout(function (evt) {
       self._onMouseHold(evt);
@@ -320,15 +322,12 @@ IconGrid.prototype = {
 
   _onMouseMove: function (e) {
     var self = this;
+
     // slightly hokey caching of last mousemove event (the position is what we care about) for the case 
     // when you want to scroll multiple pages, without having to wiggle the mouse
-    if (e) {
-      self._pageScrollEventObject = e;
-    } else {
-      e = self._pageScrollEventObject;
-    }
-
+    if (!e) e = self.lastMouseEvent;
     e.preventDefault();
+
     if (self._mouseDownTime == 0) {
       return;
     }
@@ -459,11 +458,12 @@ IconGrid.prototype = {
   },
 
   _onMouseUp: function (e) {
+    e.preventDefault();
     var self = this;
+
     clearTimeout(self._mouseDownHoldTimer);
     self._mouseDownHoldTimer = undefined;
 
-    e.preventDefault();
     var curPage = self.getCurrentPage();
     // console.log("OWA: MOUSE UP!");
     if (self._draggedApp) {
@@ -859,8 +859,15 @@ IconGrid.prototype = {
     return appDisplayFrame;
   },
 
+
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
   initialize: function () {
     var self = this;
+
     self.dashboard = $("<div/>").addClass("dashboard");
     self.dashboard.css({
       width: self.layout.panelWidth,
@@ -874,103 +881,57 @@ IconGrid.prototype = {
 
 
 
-    //prevent context menus
+    // //prevent context menus
     (self.dashcontainer.get(0)).addEventListener("contextmenu", function (e) {
       e.preventDefault();
     }, true);
 
 
-    self.dashcontainer.bind("mousedown touchstart", function(e) {
-      e.preventDefault();
-      if(e.originalEvent.touches && e.originalEvent.touches.length) {
-        e = e.originalEvent.touches[0];
+
+    self.dashcontainer.mousedown(function (evt) {
+      self.lastMouseEvent = evt;
+      self._onMouseDown(evt);
+    });
+    self.dashcontainer.mousemove(function (evt) {
+      self.lastMouseEvent = evt;
+      self._onMouseMove(evt);
+    });
+    self.dashcontainer.mouseup(function (evt) {
+      self._onMouseUp(evt);
+    });
+
+    self.dashcontainer.mouseleave(function (evt) {
+      self._onMouseLeave(evt);
+    });
+    self.dashcontainer.mouseenter(function (evt) {
+      self._onMouseEnter(evt);
+    });
+
+
+    self.dashcontainer.get(0).addEventListener("touchstart", function(e) {
+      if (e.touches && e.touches.length) {
+        e.clientX = e.touches[0].clientX;
+        e.clientY = e.touches[0].clientY;
       }
+      self.lastMouseEvent = e;
       self._onMouseDown(e);
-    });
 
+    }, false);
 
-    self.dashcontainer.bind("mousemove touchmove", function(e) {
-      e.preventDefault();
-      if(e.originalEvent.changedTouches && e.originalEvent.changedTouches.length) {
-        e = e.originalEvent.changedTouches[0];
+    self.dashcontainer.get(0).addEventListener("touchmove", function(e) {
+      if (e.touches && e.touches.length) {
+        e.clientX = e.touches[0].clientX;
+        e.clientY = e.touches[0].clientY;
       }
+      self.lastMouseEvent = e;
       self._onMouseMove(e);
-    });
+    }, false);
 
+    self.dashcontainer.get(0).addEventListener("touchend", function(e) {
+      //cached last move event
+      self._onMouseUp(self.lastMouseEvent);
+    }, false);
 
-    self.dashcontainer.bind("mouseup touchend", function(e) {
-      e.preventDefault();
-      if(e.originalEvent.touches && e.originalEvent.touches.length) {
-        e = e.originalEvent.touches[0];
-      } else if(e.originalEvent.changedTouches && e.originalEvent.changedTouches.length) {
-        e = e.originalEvent.changedTouches[0];
-      }
-
-      if (!e) e = self._pageScrollEventObject;
-      self._onMouseUp(e);
-    });
-
-
-
-    // self.dashcontainer.mousedown(function (evt) {
-    //   self._onMouseDown(evt);
-    // });
-    // self.dashcontainer.mouseup(function (evt) {
-    //   self._onMouseUp(evt);
-    // });
-    // self.dashcontainer.mousemove(function (evt) {
-    //   self._onMouseMove(evt);
-    // });
-    // self.dashcontainer.mouseleave(function (evt) {
-    //   self._onMouseLeave(evt);
-    // });
-    // self.dashcontainer.mouseenter(function (evt) {
-    //   self._onMouseEnter(evt);
-    // });
-
-
-
-    // self.dashcontainer.bind('touchstart', function (evt) {
-    //   if (evt.touches && evt.touches.length) {
-    //     evt.clientX = evt.originalevent.touches[0].clientX;
-    //     evt.clientY = evt.originalevent.touches[0].clientY;
-    //     self._onMouseDown(evt);
-    //   }
-    // });
-
-    // self.dashcontainer.bind('touchmove', function (evt) {
-    //   if (evt.touches && evt.touches.length) {
-    //     evt.clientX = evt.originalevent.changedtouches[0].clientX;
-    //     evt.clientY = evt.originalevent.changedtouches[0].clientY;
-    //     self._onMouseMove(evt);
-    //   }
-    // });
-
-    // self.dashcontainer.bind('touchend', function (evt) {
-    //    self._onMouseUp(self._pageScrollEventObject);
-    // });
-
-
-    // (self.dashcontainer.get(0)).addEventListener("touchstart", function (e) {
-    //   if (e.touches && e.touches.length) {
-    //     e.clientX = e.touches[0].clientX;
-    //     e.clientY = e.touches[0].clientY;
-    //     self._onMouseDown(e);
-    //   }
-    // }, false);
-
-    // (self.dashcontainer.get(0)).addEventListener("touchmove", function (e) {
-    //   if (e.touches && e.touches.length) {
-    //     e.clientX = e.touches[0].clientX;
-    //     e.clientY = e.touches[0].clientY;
-    //     self._onMouseMove(e);
-    //   }
-    // }, false);
-
-    // (self.dashcontainer.get(0)).addEventListener("touchend", function (e) {
-    //   //cached last move event
-    //   self._onMouseUp(self._pageScrollEventObject);
-    // }, false);
   }
 
 };
