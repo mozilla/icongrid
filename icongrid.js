@@ -38,8 +38,12 @@
 // contains constants defining the current layout, values computed from them,
 // and methods to alter and retrieve them, as well as update the views
 function GridLayout(width, height, columns, rows) {
-  this.panelWidth = width;
-  this.panelHeight = height;
+  this.containerWidth = width;
+  this.containerHeight = height;
+  this.panelWidth = this.containerWidth;
+  this.panelHeight = Math.floor(this.containerHeight * 0.95);
+  this.pageindicatorWidth = this.containerWidth;
+  this.pageindicatorHeight = this.containerHeight - this.panelHeight;
   this.rowCount = rows;
   this.columnCount = columns;
 
@@ -382,6 +386,7 @@ IconGrid.prototype = {
             // need to put the page we left back the way it was
             if (curPage != page) self.redrawPage(curPage);
             self.arrangeAppsOnPageToFit(page, currentSlot);
+            self.updatePageIndicator();
           });
         }
       }
@@ -506,6 +511,8 @@ IconGrid.prototype = {
 
       // stop dragging 
       self._draggedApp = undefined;
+          
+      self.updatePageIndicator();
 
     } else {
       // dragged the dashboard
@@ -541,7 +548,7 @@ IconGrid.prototype = {
           curPage--;
         }
 
-        self.goToPage(curPage, 250);
+        self.goToPage(curPage, 250, function() { self.updatePageIndicator()});
 
       } else { // drag, which may or may not go to the next page
         // console.log("OWA: dashboard dragged");
@@ -555,7 +562,7 @@ IconGrid.prototype = {
             snapPage++;
           }
         }
-        self.goToPage(snapPage, 350);
+        self.goToPage(snapPage, 350, function() { self.updatePageIndicator()});
       }
     }
 
@@ -728,6 +735,7 @@ IconGrid.prototype = {
     }
 
     self.saveIconGridState(self.dashname, self.dashboardState);
+    self.updatePageIndicator();
   },
 
   insertNewItemIntoDash: function (guid) {
@@ -777,6 +785,46 @@ IconGrid.prototype = {
       width: self.layout.panelWidth,
       height: self.layout.panelHeight
     });
+    self.updatePageIndicator();
+  },
+
+
+  updatePageIndicator: function () {
+    var p;
+    var self = this;
+
+    function makeGoToPageFunc(page) {
+      return function() {
+        self.goToPage(page, 350, function() {self.updatePageIndicator();});
+            ;
+
+      }
+    }
+
+    var currentPage = self.getCurrentPage();
+    $(".pagemark").remove();
+
+    for (p=0; p<self.dashboardState.pages.length; p++) {
+      //if ($("#marker" + p).length == 0) {
+        var mark = $("<span>").addClass("pagemark").attr("id", "marker" + p);
+        mark.css({
+          height: self.layout.pageindicatorHeight,
+          width: Math.floor(self.layout.pageindicatorHeight * 1.25) 
+        });
+           
+        
+        var indi = $("<img width='" + self.layout.pageindicatorHeight + "' height='" + self.layout.pageindicatorHeight + "'/>");
+        if (p ==currentPage) {
+          indi.attr('src', "page_cur.png");
+        } else {
+          indi.attr('src', "page.png");
+        }
+
+        mark.append(indi);
+        mark.click(makeGoToPageFunc(p));
+        self.pageindicator.append(mark);
+      //} 
+    }
   },
 
   createGridItem: function (guid) {
@@ -874,11 +922,19 @@ IconGrid.prototype = {
       height: self.layout.panelHeight
     });
 
+
+    self.pageindicator = $("<div>").addClass("pageindicator");
+    self.pageindicator.css({
+      top: self.layout.panelHeight, 
+      width: self.layout.pageindicatorWidth, 
+      height: self.layout.pageindicatorHeight
+    });
+
     self.dashcontainer.css({
-      clip: "rect( 0px, " + self.layout.panelWidth + "px, " + self.layout.panelHeight + "px, 0px)"
+      clip: "rect( 0px, " + self.layout.containerWidth + "px, " + self.layout.containerWidth + "px, 0px)"
     });
     self.dashcontainer.append(self.dashboard);
-
+    self.dashcontainer.append(self.pageindicator);
 
 
     // //prevent context menus
@@ -928,7 +984,7 @@ IconGrid.prototype = {
     }, false);
 
     self.dashcontainer.get(0).addEventListener("touchend", function(e) {
-      //cached last move event
+      //cached last touch or move event
       self._onMouseUp(self.lastMouseEvent);
     }, false);
 
