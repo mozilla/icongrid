@@ -4,9 +4,6 @@
   margin: 0px;
   border: 0px;
   padding: 0px;
-  width: 400;
-  height: 300;
-  clip: rect(0px, 720px, 110px, 0px);
   overflow: hidden;
 }
 
@@ -27,6 +24,21 @@
   vertical-align: top;
   overflow: hidden;
 }
+
+.pageindicator {
+  position: absolute;
+  margin: auto;
+  border: 0px;
+  padding: 0px;
+  
+    text-align: center;  
+    white-space: nowrap;  
+    overflow: hidden;  
+}
+
+.pagemark {
+    display: inline-block;
+    vertical-align: middle;  }
 
 .appDisplayFrame {
   border: 0px;
