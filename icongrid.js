@@ -41,19 +41,18 @@ function GridLayout(width, height, columns, rows) {
   this.containerWidth = width;
   this.containerHeight = height;
   this.panelWidth = this.containerWidth;
-  this.panelHeight = Math.floor(this.containerHeight * 0.95);
   this.pageindicatorWidth = this.containerWidth;
-  this.pageindicatorHeight = this.containerHeight - this.panelHeight;
+  //don't make the page indicators too big or too small
+  this.pageindicatorHeight = Math.min(Math.max(this.containerHeight * 0.5, 10), 16);
+
+  this.panelHeight = this.containerHeight - this.pageindicatorHeight;
+
   this.rowCount = rows;
   this.columnCount = columns;
 
   //computed values for the rest, change if you like
   this.itemBoxWidth = Math.floor(this.panelWidth / this.columnCount);
   this.itemBoxHeight = Math.floor(this.panelHeight / this.rowCount);
-  this.itemIconSize = Math.floor(Math.min(this.itemBoxWidth, this.itemBoxHeight) * 0.6);
-  this.itemBorderSize = Math.max(Math.ceil(this.itemIconSize / 12), 2);
-  this.itemLabelWidth = Math.floor(this.itemBoxWidth * 0.8);
-  this.itemLabelFontSize = Math.max(Math.ceil(this.itemIconSize / 6), 10);
 };
 
 
@@ -136,12 +135,11 @@ IconGrid.prototype = {
     // grab the mouse position
     self._mouseDownX = e.clientX;
     self._mouseDownY = e.clientY;
-    //console.log("mousedown: " + e.clientX + " " + e.clientY);
-    var iconWrapper = $(e.target.parentNode.parentNode);
+    var iconWrapper = $(e.target.parentNode);
 
     self._dashboardScrollOffsetX = self.extractNumber(self.dashboard.position().left);
-    //_dashOffsetY = self.extractNumber(self.dashboard.position().top);
-    if (iconWrapper.hasClass("iconWrapper")) {
+
+    if (iconWrapper.hasClass("icon")) {
       self._appIcon = iconWrapper;
       self._appIcon.addClass("highlighted");
     }
@@ -353,33 +351,35 @@ IconGrid.prototype = {
       var containerOffsetLeft = self.dashcontainer.offset().left;
       var containerOffsetTop = self.dashcontainer.offset().top;
 
+      var theDraggedItem = self.gridItemCache[self._draggedApp];
+
       // this is the icon dragging code
       // I need to do all the snapping, rearranging the other apps on the page, etc here
       // don't ]et the app be dragged outside the clipping frame
-      var dragOutAmount = Math.floor((self.layout.itemBoxWidth - ((self.layout.itemBorderSize * 2) + self.layout.itemIconSize)) / 2) - 1; //frame padding
+      var dragOutAmount = Math.floor((self.layout.itemBoxWidth - theDraggedItem.children(".icon").width() ) / 2) - 1; //frame padding
+
       // figure out if they are pushing against the side and want to scroll the page
       var paging = 0;
-      if (self.gridItemCache[self._draggedApp].position().left <= -dragOutAmount) paging = -1;
-      if ((self.gridItemCache[self._draggedApp].position().left - dragOutAmount + self.layout.itemBoxWidth) >= self.layout.panelWidth) paging = 1;
+      if (theDraggedItem.position().left <= -dragOutAmount) paging = -1;
+      if ((theDraggedItem.position().left - dragOutAmount + self.layout.itemBoxWidth) >= self.layout.panelWidth) paging = 1;
 
       // keep the app inside the dash
       var newLeft = Math.min(Math.max((self._draggedAppOffsetX + e.clientX - self._mouseDownX), -dragOutAmount), (self.layout.panelWidth + dragOutAmount - self.layout.itemBoxWidth));
       var newTop = Math.min(Math.max((self._draggedAppOffsetY + e.clientY - self._mouseDownY), 0), (self.layout.panelHeight - self.layout.itemBoxHeight));
 
       // keep it from going outside the dashboard
-      self.gridItemCache[self._draggedApp].css({
+      theDraggedItem.css({
         left: newLeft,
         top: newTop
       });
-      // console.log("OWA app coords: " + newLeft + " " + newTop);
+
       // figure out which slot we are above
       // if it's empty, do nothing
-      var currentSlot = self.slotForPosition(self.gridItemCache[self._draggedApp].position().left, self.gridItemCache[self._draggedApp].position().top);
+      var currentSlot = self.slotForPosition(theDraggedItem.position().left, theDraggedItem.position().top);
 
       // this is the paging code that is triggered when you are carrying an app and then push against the side of the screen.
       // we go to the next page in that direction, if there is one
       if (paging != 0) {
-        // console.log("paging to the " + paging==1?"right":"left");
         self._draggedAppLastSlot = undefined;
         if (!self._pageScrollDelay) {
           var resultantPage = self.goToPage(curPage + paging, 400, function (page) {
@@ -796,8 +796,6 @@ IconGrid.prototype = {
     function makeGoToPageFunc(page) {
       return function() {
         self.goToPage(page, 350, function() {self.updatePageIndicator();});
-            ;
-
       }
     }
 
@@ -805,25 +803,23 @@ IconGrid.prototype = {
     $(".pagemark").remove();
 
     for (p=0; p<self.dashboardState.pages.length; p++) {
-      //if ($("#marker" + p).length == 0) {
-        var mark = $("<span>").addClass("pagemark").attr("id", "marker" + p);
-        mark.css({
-          height: self.layout.pageindicatorHeight,
-          width: Math.floor(self.layout.pageindicatorHeight * 1.25) 
-        });
-           
-        
-        var indi = $("<img width='" + self.layout.pageindicatorHeight + "' height='" + self.layout.pageindicatorHeight + "'/>");
-        if (p ==currentPage) {
-          indi.attr('src', "page_cur.png");
-        } else {
-          indi.attr('src', "page.png");
-        }
+      var mark = $("<span>").addClass("pagemark").attr("id", "marker" + p);
+      mark.css({
+        height: self.layout.pageindicatorHeight,
+        width: Math.floor(self.layout.pageindicatorHeight * 1.25) 
+      });
+         
+      
+      var indi = $("<img width='" + self.layout.pageindicatorHeight + "' height='" + self.layout.pageindicatorHeight + "'/>");
+      if (p ==currentPage) {
+        indi.attr('src', "page_cur.png");
+      } else {
+        indi.attr('src', "page.png");
+      }
 
-        mark.append(indi);
-        mark.click(makeGoToPageFunc(p));
-        self.pageindicator.append(mark);
-      //} 
+      mark.append(indi);
+      mark.click(makeGoToPageFunc(p));
+      self.pageindicator.append(mark);
     }
   },
 
@@ -838,33 +834,10 @@ IconGrid.prototype = {
       height: self.layout.itemBoxHeight
     });
 
-    // helpers
-    var borders = self.layout.itemBorderSize * 2;
-    var wrapperSize = self.layout.itemIconSize + borders;
-    var heightRem = self.layout.itemBoxHeight - (wrapperSize + self.layout.itemLabelFontSize);
-    var widthRem = self.layout.itemBoxWidth - wrapperSize;
-
-    var iconWrapper = $("<div/>").addClass("iconWrapper").css({
-      width: wrapperSize,
-      height: wrapperSize,
-      marginTop: (heightRem / 2) + "px",
-      marginBottom: "0px",
-      marginLeft: (widthRem / 2) + "px",
-      marginRight: (widthRem / 2) + "px",
-      "border-radius": (wrapperSize / 6) + "px"
-    });
-
     var clickyIcon = $("<div/>").addClass("icon");
     clickyIcon.attr("guid", guid);
 
     clickyIcon.css({
-      width: self.layout.itemIconSize,
-      height: self.layout.itemIconSize,
-      margin: self.layout.itemBorderSize,
-
-      "-moz-border-radius": (self.layout.itemIconSize / 6) + "px",
-      "-webkit-border-radius": (self.layout.itemIconSize / 6) + "px",
-      "border-radius": (self.layout.itemIconSize / 6) + "px"
 
     });
 
@@ -877,22 +850,16 @@ IconGrid.prototype = {
     //if we still don't have one, use a generic gray icon as a placeholder
     if (!imgURL) {
       imgURL = "data:image/png;base64,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";
-
     }
 
-    var appIcon = $("<img width='" + self.layout.itemIconSize + "' height='" + self.layout.itemIconSize + "'/>");
+    var appIcon = $("<img>").css({width: "100%", height: "100%"});
     appIcon.attr('src', imgURL);
 
     clickyIcon.append(appIcon);
 
-    iconWrapper.append(clickyIcon);
-    appDisplayFrame.append(iconWrapper);
+     appDisplayFrame.append(clickyIcon);
 
     var appName = $("<div/>").addClass("appLabel");
-    appName.css({
-      width: self.layout.itemLabelWidth,
-      "font-size": self.layout.itemLabelFontSize
-    });
 
     var itemTitle = theItem.itemTitle;
     if (!itemTitle && self.datasource.getItemTitle) { 
@@ -931,7 +898,7 @@ IconGrid.prototype = {
     });
 
     self.dashcontainer.css({
-      clip: "rect( 0px, " + self.layout.containerWidth + "px, " + self.layout.containerWidth + "px, 0px)"
+      clip: "rect( 0px, " + self.layout.containerWidth + "px, " + self.layout.containerHeight + "px, 0px)"
     });
     self.dashcontainer.append(self.dashboard);
     self.dashcontainer.append(self.pageindicator);
