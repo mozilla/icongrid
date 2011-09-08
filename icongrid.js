@@ -43,7 +43,7 @@ function GridLayout(width, height, columns, rows) {
   this.panelWidth = this.containerWidth;
   this.pageindicatorWidth = this.containerWidth;
   //don't make the page indicators too big or too small
-  this.pageindicatorHeight = Math.min(Math.max(this.containerHeight * 0.5, 10), 16);
+  this.pageindicatorHeight = Math.min(Math.max(this.containerHeight * 0.7, 14), 20);
 
   this.panelHeight = this.containerHeight - this.pageindicatorHeight;
 
@@ -141,7 +141,7 @@ IconGrid.prototype = {
 
     if (iconWrapper.hasClass("icon")) {
       self._appIcon = iconWrapper;
-      self._appIcon.addClass("highlighted");
+      self._appIcon.children(".iconshader").addClass("highlighted");
     }
   },
 
@@ -405,7 +405,7 @@ IconGrid.prototype = {
       self.dashboard.css("left", newPos);
 
       if (self._appIcon != undefined) {
-        self._appIcon.removeClass("highlighted");
+        self._appIcon.children(".iconshader").removeClass("highlighted");
         self._appIcon = undefined;
       }
     }
@@ -419,7 +419,7 @@ IconGrid.prototype = {
     self._draggedApp = $(e.target.parentNode).attr("guid");
     //check to be sure we have one
     if (self._draggedApp) {
-      self._appIcon.removeClass("highlighted");
+        self._appIcon.children(".iconshader").removeClass("highlighted");
       self._appIcon.addClass("liftedApp");
 
       self._draggedAppOffsetX = self.extractNumber(self.gridItemCache[self._draggedApp].position().left);
@@ -531,7 +531,7 @@ IconGrid.prototype = {
 
       if (tap && (self._appIcon != undefined)) {
         // console.log("OWA: app launched");
-        self._appIcon.removeClass("highlighted");
+        self._appIcon.children(".iconshader").removeClass("highlighted");
         self._appIcon = undefined;
 
         var guid = $(e.target.parentNode).attr("guid");
@@ -806,11 +806,11 @@ IconGrid.prototype = {
       var mark = $("<span>").addClass("pagemark").attr("id", "marker" + p);
       mark.css({
         height: self.layout.pageindicatorHeight,
-        width: Math.floor(self.layout.pageindicatorHeight * 1.25) 
+        width: Math.floor(self.layout.pageindicatorHeight * 1.1) 
       });
          
       
-      var indi = $("<img width='" + self.layout.pageindicatorHeight + "' height='" + self.layout.pageindicatorHeight + "'/>");
+      var indi = $("<img width='" + Math.floor(self.layout.pageindicatorHeight * 0.8) + "' height='" + Math.floor(self.layout.pageindicatorHeight * 0.8) + "'/>");
       if (p ==currentPage) {
         indi.attr('src', "page_cur.png");
       } else {
@@ -837,6 +837,7 @@ IconGrid.prototype = {
     var clickyIcon = $("<div/>").addClass("icon");
     clickyIcon.attr("guid", guid);
 
+
     clickyIcon.css({
 
     });
@@ -856,8 +857,12 @@ IconGrid.prototype = {
     appIcon.attr('src', imgURL);
 
     clickyIcon.append(appIcon);
+    var darken = $("<div/>").addClass("iconshader").css({position: "absolute", top: "0px", left: "0px", width: "100%", height: "100%"})
+    clickyIcon.append(darken);
 
-     appDisplayFrame.append(clickyIcon);
+    appDisplayFrame.append(clickyIcon);
+
+    //add the shader for selection
 
     var appName = $("<div/>").addClass("appLabel");
 
