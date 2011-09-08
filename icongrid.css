@@ -53,12 +53,14 @@
 }
       
 .highlighted {
-  opacity: 0.5;
+  background-color: black;
+  opacity: 0.25;
 }
 
 
 /* change if you'd like it to display differently */
 .icon {
+  position: relative;
   width: 60%;
   height: 55%;
   margin-top:20%;
@@ -75,6 +77,11 @@
   background-image: -webkit-gradient(linear, left top, left bottom, from(#F5F5F5), to(#AFAFAF) );
 }
 
+.iconshader {
+  -moz-border-radius: 10%;
+  -webkit-border-radius: 10%;
+  border-radius: 10%;
+}
 
 .appLabel {
   width: 100%;
