@@ -57,16 +57,17 @@ function GridLayout(width, height, columns, rows) {
 
 
 /****************************************************************************/
-
-
 function IconGrid(name, hostElement, datasource, layout) {
   // used for local storage identification
-  this.dashname = name;
+  this.name = name;
+
   // the jquery object that contains the dash
-  this.dashcontainer = hostElement;
-  this.dashboard = undefined; //created on initiliaze
+  this.container = hostElement;
+  this.dashboard = undefined; //created on initialize
+
   // object that provides all the information necessary to 
   this.datasource = datasource;
+
   // object containing all the layout parameters
   this.layout = layout;
 
@@ -110,6 +111,7 @@ function IconGrid(name, hostElement, datasource, layout) {
 
   // the previous z-height that the dragged app began at
   this._draggedAppOrigZ;
+
   // the previous slot the currently dragged app was over, used to trigger animations only when the app is moved over
   // a different slot
   this._draggedAppLastSlot;
@@ -117,40 +119,47 @@ function IconGrid(name, hostElement, datasource, layout) {
 
 IconGrid.prototype = {
   /////////////////////////////////////////////////////////
-  getCurrentPage: function () {
-    return Math.floor(((Math.abs(this.dashboard.position().left)) + (this.layout.panelWidth / 2)) / this.layout.panelWidth);
+  get page() {
+    var left = Math.abs(this.dashboard.position().left);
+    var panelWidth = this.layout.panelWidth;
+    return Math.floor((left + panelWidth / 2) / panelWidth);
+  },
+
+  goToPage: function (page, animationSpeed, completionCallback) {
+    var pagesCount = this.dashboardState.pages.length;
+    if (page >= pagesCount)
+      page = pagesCount - 1;
+    else if (page < 0)
+      page = 0;
+
+    var panelWidth = this.layout.panelWidth;
+    var targetLeft = (page * panelWidth * -1);
+    if ((this.dashboard.position().left == targetLeft) || this._pageAnimating)
+      return page;
+
+    this._pageAnimating = true;
+    this._pageScrollDelay = true; // used by the auto-scrolling code to prevent rapid scrolling across many pages
+
+    var self = this;
+    this.dashboard.animate({ left: targetLeft }, animationSpeed, function () {
+      self._pageAnimating = false;
+
+      if (completionCallback)
+        completionCallback(page, self);
+
+      self._pageScrollTimer = setTimeout(function () {
+        self._pageScrollDelay = false;
+        self._onMouseMove(false);
+      }, 400);
+    });
+
+    return page;
   },
 
   /////////////////////////////////////////////////////////
-  _onMouseDown: function (e) {
-    e.preventDefault();
-
-    this._mouseDownTime = e.timeStamp;
-    this._mouseDownHoldTimer = setTimeout(function (evt, self) {
-      self._onMouseHold(evt);
-    }, 1000, e, this);
-
-    // grab the mouse position
-    this._mouseDownX = e.clientX;
-    this._mouseDownY = e.clientY;
-    var iconWrapper = $(e.target.parentNode);
-
-    this._dashboardScrollOffsetX = this.extractNumber(this.dashboard.position().left);
-
-    if (iconWrapper.hasClass("icon")) {
-      this._appIcon = iconWrapper;
-      this._appIcon.children(".iconshader").addClass("highlighted");
-    }
-  },
-
-  extractNumber: function (value) {
-    var n = parseInt(value, 10);
-    return n == null || isNaN(n) ? 0 : n;
-  },
-
   // This code computes the (minimal) changes to the initial arrangement that will leave a hole under the 
   // currently dragged item.  The resultant array is used to move the necessary items around in the page.
-  arrangeAppsOnPageToFit: function (pageIdx, overSlot) {
+  _arrangeAppsOnPageToFit: function (pageIdx, overSlot) {
     if (!this.dashboardState.pages[pageIdx]) {
       console.log("OWA: ERROR!!  non-existent page index: " + pageIdx);
       return null;
@@ -166,14 +175,15 @@ IconGrid.prototype = {
       // if we are unable to find a hole to the left, then find the closest one to the right of the dragged item.
       // if there are no holes to be found, then use a virtual hole that is off the end of the array to the right.
       //  we will fix the array up after the drop
-      var hole = (this.layout.rowCount * this.layout.columnCount);
-      var i;
+
       //try to find a left hole
-      for (i = 0; i < overSlot; i++) {
+      var hole = (this.layout.rowCount * this.layout.columnCount);
+      for (var i = 0; i < overSlot; i++) {
         if (!arrangedPage[i]) {
           hole = i;
         }
       }
+
       //didnt find left hole, look for right
       if (hole == (this.layout.rowCount * this.layout.columnCount)) {
         for (i = (this.layout.rowCount * this.layout.columnCount) - 1; i > overSlot; i--) {
@@ -200,11 +210,11 @@ IconGrid.prototype = {
     if (arrangedPage) {
       // now loop over all of the app signatures in the array, and tell each appDisplayFrame (from the cache) 
       // to animate to left = array slot * this.layout.itemBoxWidth
-      var i;
+
       // NOTE: (this.layout.columnCount+1) here is important!  It pushes the rightmost one off the side of the page, so that it is hidden
-      for (i = 0; i < (this.layout.rowCount * this.layout.columnCount) + 1; i++) {
+      for (var i = 0; i < (this.layout.rowCount * this.layout.columnCount) + 1; i++) {
         if (arrangedPage[i]) {
-          var pos = this.positionForSlot(i);
+          var pos = this._positionForSlot(i);
           if ((this.gridItemCache[arrangedPage[i]].position().left != pos.left) ||
               (this.gridItemCache[arrangedPage[i]].position().top != pos.top)) {
             this.gridItemCache[arrangedPage[i]].stop(true, false);
@@ -222,10 +232,10 @@ IconGrid.prototype = {
   },
 
   // make sure every appDisplayFrame on the page is where it is supposed to be
-  redrawPage: function (page, animated) {
+  _redrawPage: function (page, animated) {
     for (var i = 0; i < (this.layout.rowCount * this.layout.columnCount); i++) {
       if (this.dashboardState.pages[page][i]) {
-        var pos = this.positionForSlot(i);
+        var pos = this._positionForSlot(i);
         if (animated) {
           this.gridItemCache[this.dashboardState.pages[page][i]].css({
             left: pos.left,
@@ -241,17 +251,17 @@ IconGrid.prototype = {
     }
   },
 
-  fixUpPageOverflows: function (startPage) {
+  _fixUpPageOverflows: function (startPage) {
     // loop over all the pages, starting at the first, (or maybe the one we just dropped on?) and
     // check to make sure none of the apps have run off the end of the page.  if so, then shove them onto the next page,
     // and keep going, until we get to the end, or a page that doesn't need to be fixed
     // Then, when we are all done, remove any trailing pages that are empty
-    var p, t;
+    var t;
     var numPages = this.dashboardState.pages.length;
 
     var pageSize = this.layout.columnCount * this.layout.rowCount;
 
-    for (p = startPage; p < numPages; p++) {
+    for (var p = startPage; p < numPages; p++) {
       if (this.dashboardState.pages[p][pageSize]) { //overflow
         //push the app into slot 0 of the next page, and then see if that causes a ripple
         if (!this.dashboardState.pages[p + 1])
@@ -271,7 +281,7 @@ IconGrid.prototype = {
 
         this.dashboardState.pages[p + 1][0] = this.dashboardState.pages[p][pageSize];
         this.dashboardState.pages[p][pageSize] = undefined;
-        this.redrawPage(p + 1);
+        this._redrawPage(p + 1);
       }
     }
 
@@ -294,7 +304,7 @@ IconGrid.prototype = {
   },
 
   // finds the nearest slot for a given set of LOCAL coordinates
-  slotForPosition: function (left, top) {
+  _slotForPosition: function (left, top) {
     var currentSlot = Math.floor((left + (this.layout.itemBoxWidth / 2)) / this.layout.itemBoxWidth);
 
     // add on the rows
@@ -309,7 +319,7 @@ IconGrid.prototype = {
   },
 
   // returns the coordinates for a given slot
-  positionForSlot: function (s) {
+  _positionForSlot: function (s) {
     var slotLeft = this.layout.itemBoxWidth * (s % this.layout.columnCount);
     var slotTop = Math.floor(s / this.layout.columnCount) * this.layout.itemBoxHeight;
 
@@ -318,6 +328,28 @@ IconGrid.prototype = {
       top: slotTop
     };
   },
+
+  _onMouseDown: function (e) {
+    e.preventDefault();
+
+    this._mouseDownTime = e.timeStamp;
+    this._mouseDownHoldTimer = setTimeout(function (evt, self) {
+      self._onMouseHold(evt);
+    }, 1000, e, this);
+
+    // grab the mouse position
+    this._mouseDownX = e.clientX;
+    this._mouseDownY = e.clientY;
+    var iconWrapper = $(e.target.parentNode);
+
+    this._dashboardScrollOffsetX = parseInt(this.dashboard.position().left, 10) || 0;
+
+    if (iconWrapper.hasClass("icon")) {
+      this._appIcon = iconWrapper;
+      this._appIcon.children(".iconshader").addClass("highlighted");
+    }
+  },
+
 
   _onMouseMove: function (e) {
     // slightly hokey caching of last mousemove event (the position is what we care about) for the case 
@@ -336,14 +368,13 @@ IconGrid.prototype = {
       } else return;
     }
 
-    var curPage = this.getCurrentPage();
-
     // this is the -app- dragging code, which manages the necessary animations, the underlying data changes, and the possible paging to a different
     // dashboard page while carrying an app
+    var curPage = this.page;
     if (this._draggedApp) {
       // we are moving the appDisplayFrame from one coordinate system to another, so we need to computer an offset, so it doesn't jump away from the cursor
-      var containerOffsetLeft = this.dashcontainer.offset().left;
-      var containerOffsetTop = this.dashcontainer.offset().top;
+      var containerOffsetLeft = this.container.offset().left;
+      var containerOffsetTop = this.container.offset().top;
 
       var theDraggedItem = this.gridItemCache[this._draggedApp];
 
@@ -369,7 +400,7 @@ IconGrid.prototype = {
 
       // figure out which slot we are above
       // if it's empty, do nothing
-      var currentSlot = this.slotForPosition(theDraggedItem.position().left, theDraggedItem.position().top);
+      var currentSlot = this._slotForPosition(theDraggedItem.position().left, theDraggedItem.position().top);
 
       // this is the paging code that is triggered when you are carrying an app and then push against the side of the screen.
       // we go to the next page in that direction, if there is one
@@ -379,8 +410,8 @@ IconGrid.prototype = {
           var resultantPage = this.goToPage(curPage + paging, 400, function (page, self) {
             // need to put the page we left back the way it was
             if (curPage != page)
-              self.redrawPage(curPage);
-            self.arrangeAppsOnPageToFit(page, currentSlot);
+              self._redrawPage(curPage);
+            self._arrangeAppsOnPageToFit(page, currentSlot);
             self.updatePageIndicator();
           });
         }
@@ -390,7 +421,7 @@ IconGrid.prototype = {
         this._draggedAppLastSlot = currentSlot;
         // now call the magic function that, given you are holding the lifted app over slot N, 
         // what the arrangement of the other apps in the page should be.
-        this.arrangeAppsOnPageToFit(curPage, this._draggedAppLastSlot);
+        this._arrangeAppsOnPageToFit(curPage, this._draggedAppLastSlot);
 
       }
     } else {
@@ -406,7 +437,7 @@ IconGrid.prototype = {
     }
   },
 
-  // let's actually lift the app up and out of the page, and attach it to the dashcontainer, so
+  // let's actually lift the app up and out of the page, and attach it to the container, so
   // we can move it around between pages if necessary
   _onMouseHold: function (e) {
     //keep track of the id of the app we are dragging.  this is also used as a flag to tell us we are dragging
@@ -416,20 +447,20 @@ IconGrid.prototype = {
         this._appIcon.children(".iconshader").removeClass("highlighted");
       this._appIcon.addClass("liftedApp");
 
-      this._draggedAppOffsetX = this.extractNumber(this.gridItemCache[this._draggedApp].position().left);
-      this._draggedAppOffsetY = this.extractNumber(this.gridItemCache[this._draggedApp].position().top);
+      this._draggedAppOffsetX = parseInt(this.gridItemCache[this._draggedApp].position().left, 10) || 0;
+      this._draggedAppOffsetY = parseInt(this.gridItemCache[this._draggedApp].position().top, 10) || 0;
 
-      var startSlot = this.slotForPosition(this._draggedAppOffsetX, this._draggedAppOffsetY)
+      var startSlot = this._slotForPosition(this._draggedAppOffsetX, this._draggedAppOffsetY)
 
       //remove the app from the page it started on
-      this.dashboardState.pages[this.getCurrentPage()][startSlot] = undefined;
+      this.dashboardState.pages[this.page][startSlot] = undefined;
       //lift it up
       this._draggedAppOrigZ = this.gridItemCache[this._draggedApp].css('z-index');
 
-      //remove it from the page it was in and attach it to the dashcontainer instead
+      //remove it from the page it was in and attach it to the container instead
       this.gridItemCache[this._draggedApp].css('z-index', 10000);
       this.gridItemCache[this._draggedApp].detach();
-      this.dashcontainer.append(this.gridItemCache[this._draggedApp]);
+      this.container.append(this.gridItemCache[this._draggedApp]);
 
       //temporarily add an extra blank page at the end, in case the user wants to spread things out
       this.addEmptyPageToDash();
@@ -460,7 +491,7 @@ IconGrid.prototype = {
     clearTimeout(this._mouseDownHoldTimer);
     this._mouseDownHoldTimer = undefined;
 
-    var curPage = this.getCurrentPage();
+    var curPage = this.page;
     // console.log("OWA: MOUSE UP!");
     if (this._draggedApp) {
 
@@ -473,27 +504,27 @@ IconGrid.prototype = {
       this._appIcon = undefined;
 
       // get the correct arrangement of the current (dropped on) page
-      var currentSlot = this.slotForPosition(this.gridItemCache[this._draggedApp].position().left, this.gridItemCache[this._draggedApp].position().top);
+      var currentSlot = this._slotForPosition(this.gridItemCache[this._draggedApp].position().left, this.gridItemCache[this._draggedApp].position().top);
 
-      var rearrangedApps = this.arrangeAppsOnPageToFit(curPage, currentSlot);
+      var rearrangedApps = this._arrangeAppsOnPageToFit(curPage, currentSlot);
       // insert the app into the empty slot it is over, on the current page
       rearrangedApps[currentSlot] = this._draggedApp;
       // console.log("OWA: DROPPED " + this._draggedApp + " IN SLOT " + currentSlot + " ON PAGE " + curPage)
       // overwrite the page in the dashboard state with the newly arranged page
       this.dashboardState.pages[curPage] = rearrangedApps;
       // DO LOTS OF FIXUP!!
-      this.fixUpPageOverflows(curPage);
+      this._fixUpPageOverflows(curPage);
 
       // save the changes
-      this.saveIconGridState(this.dashname, this.dashboardState);
+      this.saveIconGridState(this.name, this.dashboardState);
 
-      // remove the appDisplayFrame from the dashcontainer
+      // remove the appDisplayFrame from the container
       this.gridItemCache[this._draggedApp].detach();
       // insert the appDisplayFrame into the current page
       $("#page" + curPage).append(this.gridItemCache[this._draggedApp]);
 
       // animate the appdisplayframe to the correct position and z-index
-      var pos = this.positionForSlot(currentSlot);
+      var pos = this._positionForSlot(currentSlot);
       this.gridItemCache[this._draggedApp].animate({
         left: pos.left,
         top: pos.top
@@ -564,50 +595,32 @@ IconGrid.prototype = {
     this._mouseDownTime = 0;
   },
 
-  goToPage: function (whichPage, animationSpeed, completionCallback) {
-    var numPages = this.dashboardState.pages.length;
-    if (whichPage >= numPages) whichPage = numPages - 1;
-    if (whichPage < 0) whichPage = 0;
-    var finalPos = (whichPage * this.layout.panelWidth * -1);
-
-    if ((this.dashboard.position().left != finalPos) && (!this._pageAnimating)) {
-      this._pageAnimating = true;
-      this._pageScrollDelay = true; //used by the auto-scrolling code to prevent rapid scrolling across many pages
-
-      var self = this;
-      this.dashboard.animate({
-        left: (whichPage * self.layout.panelWidth * -1)
-      }, animationSpeed, function () {
-        self._pageAnimating = false;
-
-        if (completionCallback)
-          completionCallback(whichPage, self);
-
-        self._pageScrollTimer = setTimeout(function () {
-          self._pageScrollDelay = false;
-          self._onMouseMove(false);
-        }, 400);
-      });
-    }
-    return whichPage;
-  },
-
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // ==========================================================================
   // DATA MANAGEMENT AND UPDATE CODE
-/*
-  There are three moving parts to worry about:  The Dataset (list of currently installed apps), The DashboardState (a two-dimensional arrangement of references to items in the Dataset),
-  and the DisplayCache (a keyed object containing visual representations of every item in the DashboardState)
-
-  1) Poll or get notified that the dataset may have changed
-  2) For every item in the DashboardState, if it does not appear in the Dataset, remove it from the DashboardState.  
-      Also remove the corresponding item from the DisplayCache, and from the Page it was displayed on.
-  3) For every item in the Dataset, if it does not appear in the DashboardState, then add it into the DashboardState, in the first empty slot.  
-      Also generate the DisplayCache item, store it, and add it to the corresponding Page.
-  4) Recompute the this.layout parameters. 
-  5) (Done?)
-
-*/
+  // There are three moving parts to worry about:
+  //  1. Dataset (list of currently installed apps)
+  //  2. DashboardState (a two-dimensional arrangement of references to 
+  //     items in the Dataset),
+  //  3. DisplayCache (a keyed object containing visual representations
+  //     of every item in the DashboardState)
+  //
+  // 1) Poll or get notified that the dataset may have changed
+  //
+  // 2) For every item in the DashboardState, if it does not appear in the
+  //    Dataset, remove it from the DashboardState.  
+  //    Also remove the corresponding item from the DisplayCache, and from
+  //    the Page it was displayed on.
+  //
+  //  3) For every item in the Dataset, if it does not appear in the
+  //     DashboardState, then add it into the DashboardState, in the first
+  //     empty slot.
+  //     Also generate the DisplayCache item, store it, and add it to the
+  //     corresponding Page.
+  //
+  //  4) Recompute the this.layout parameters. 
+  //
+  //  5) (Done?)
+  // ==========================================================================
 
   // handle requests for the dashboardstate
   loadIconGridState: function(name) {
@@ -627,7 +640,7 @@ IconGrid.prototype = {
 
   refresh: function () {
     // ask the datasource for the freshest grid state
-    var newState = this.loadIconGridState(this.dashname);
+    var newState = this.loadIconGridState(this.name);
 
     // this is the function called by both the navigator.apps callback or the jetpack callback when the dashboard state loads
     // we immediately turn around and load the app list.
@@ -713,7 +726,7 @@ IconGrid.prototype = {
 
         if (guid && !this.gridItemCache[guid]) {
           this.gridItemCache[guid] = this.createGridItem(guid);
-          var pos = this.positionForSlot(s);
+          var pos = this._positionForSlot(s);
           this.gridItemCache[guid].css({
             left: pos.left,
             top: pos.top
@@ -736,7 +749,7 @@ IconGrid.prototype = {
       }
     }
 
-    this.saveIconGridState(this.dashname, this.dashboardState);
+    this.saveIconGridState(this.name, this.dashboardState);
     this.updatePageIndicator();
   },
 
@@ -752,7 +765,7 @@ IconGrid.prototype = {
       for (s = 0; s < (this.layout.columnCount * this.layout.rowCount); s++) {
         if (!this.dashboardState.pages[p][s]) {
           this.dashboardState.pages[p][s] = guid;
-          var pos = this.positionForSlot(s);
+          var pos = this._positionForSlot(s);
           this.gridItemCache[guid].css({
             left: pos.left,
             top: pos.top
@@ -798,7 +811,7 @@ IconGrid.prototype = {
       }
     }
 
-    var currentPage = this.getCurrentPage();
+    var currentPage = this.page;
     $(".pagemark").remove();
 
     for (var p = 0; p < this.dashboardState.pages.length; p++) {
@@ -870,19 +883,13 @@ IconGrid.prototype = {
     return appDisplayFrame;
   },
 
-
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////
+  // ==========================================================================
   initialize: function () {
     this.dashboard = $("<div/>").addClass("dashboard");
     this.dashboard.css({
       width: this.layout.panelWidth,
       height: this.layout.panelHeight
     });
-
 
     this.pageindicator = $("<div>").addClass("pageindicator");
     this.pageindicator.css({
@@ -891,43 +898,43 @@ IconGrid.prototype = {
       height: this.layout.pageindicatorHeight
     });
 
-    this.dashcontainer.css({
-      clip: "rect( 0px, " + this.layout.containerWidth + "px, " + this.layout.containerHeight + "px, 0px)"
+    this.container.css({
+      clip: "rect( 0px, " + this.layout.containerWidth + "px, "
+                          + this.layout.containerHeight + "px, 0px)"
     });
-    this.dashcontainer.append(this.dashboard);
-    this.dashcontainer.append(this.pageindicator);
+    this.container.append(this.dashboard);
+    this.container.append(this.pageindicator);
 
-
-    // //prevent context menus
-    (this.dashcontainer.get(0)).addEventListener("contextmenu", function (e) {
+    // prevent context menus
+    (this.container.get(0)).addEventListener("contextmenu", function (e) {
       e.preventDefault();
     }, true);
 
 
     var self = this;
-    this.dashcontainer.mousedown(function (evt) {
+    this.container.mousedown(function (evt) {
       self.lastMouseEvent = evt;
       self._onMouseDown(evt);
     });
 
-    self.dashcontainer.mousemove(function (evt) {
+    this.container.mousemove(function (evt) {
       self.lastMouseEvent = evt;
       self._onMouseMove(evt);
     });
 
-    self.dashcontainer.mouseup(function (evt) {
+    this.container.mouseup(function (evt) {
       self._onMouseUp(evt);
     });
 
-    self.dashcontainer.mouseleave(function (evt) {
+    this.container.mouseleave(function (evt) {
       self._onMouseLeave(evt);
     });
 
-    self.dashcontainer.mouseenter(function (evt) {
+    this.container.mouseenter(function (evt) {
       self._onMouseEnter(evt);
     });
 
-    self.dashcontainer.get(0).addEventListener("touchstart", function(e) {
+    this.container.get(0).addEventListener("touchstart", function(e) {
       if (e.touches && e.touches.length) {
         e.clientX = e.touches[0].clientX;
         e.clientY = e.touches[0].clientY;
@@ -936,7 +943,7 @@ IconGrid.prototype = {
       self._onMouseDown(e);
     }, false);
 
-    self.dashcontainer.get(0).addEventListener("touchmove", function(e) {
+    this.container.get(0).addEventListener("touchmove", function(e) {
       if (e.touches && e.touches.length) {
         e.clientX = e.touches[0].clientX;
         e.clientY = e.touches[0].clientY;
@@ -945,7 +952,7 @@ IconGrid.prototype = {
       self._onMouseMove(e);
     }, false);
 
-    self.dashcontainer.get(0).addEventListener("touchend", function(e) {
+    this.container.get(0).addEventListener("touchend", function(e) {
       //cached last touch or move event
       self._onMouseUp(self.lastMouseEvent);
     }, false);
