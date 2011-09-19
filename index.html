@@ -75,85 +75,72 @@
   </body>
 
   <script type="text/javascript">
-    var myDash;
-    var myLayout;
-    var html_datasource;
-
-    function onfocus(event) {
-      myDash.refresh();
-    }
-
-    $(document).ready(function() {
-      html_datasource = {
-
+    document.body.onload = function() {
+      var datasource = {
         iconList: {
           strawberry: {
-            itemTitle: "Strawberry",
-            itemImgURL: "images/strawberry.png"
+            title: "Strawberry",
+            imgURL: "images/strawberry.png"
           },
           watermelon: {
-            itemTitle: "Watermelon",
-            itemImgURL: "images/watermelon.png"
+            title: "Watermelon",
+            imgURL: "images/watermelon.png"
           },
           apple: {
-            itemTitle: "Apple",
-            itemImgURL: "images/apple.png"
+            title: "Apple",
+            imgURL: "images/apple.png"
           },
           banana: {
-            itemTitle: "Banana",
-            itemImgURL: "images/banana.png"
+            title: "Banana",
+            imgURL: "images/banana.png"
           },
           grape: {
-            itemTitle: "Grape",
-            itemImgURL: "images/grape.png"
+            title: "Grape",
+            imgURL: "images/grape.png"
           },
           orange: {
-            itemTitle: "Orange",
-            itemImgURL: "images/orange.png"
+            title: "Orange",
+            imgURL: "images/orange.png"
           },
           papaya: {
-            itemTitle: "Papaya",
-            itemImgURL: "images/papaya.png"
+            title: "Papaya",
+            imgURL: "images/papaya.png"
           },
           pineapple: {
-            itemTitle: "Pineapple",
-            itemImgURL: "images/pineapple.png"
+            title: "Pineapple",
+            imgURL: "images/pineapple.png"
           }
         },
 
-        getItemList: function(callback) {
+        getList: function(callback) {
           var list = this.iconList;
 
           // Add special one
-          list["about:icongrid"] = {};
+          list["about:icongrid"] = {
+            title: "About IconGrid",
+            imgURL: "http://www.publicpress.org/images/about48.png"
+          };
           callback(list);
         },
 
         openItem: function(itemID) {
-          var title = this.iconList[itemID]['itemTitle'];
-          if (!title) title = "about:icongrid";
-            window.open("http://www.google.com/search?q=" + itemID);
-            },
-
-        // if all your items have 'itemImgURL' and 'itemTitle' properties, then you don't need to implement these.
-        // These get called when an item doesn't have the right properties.
-        // Note that you can pass in data URIs for icons
-        getItemImgURL: function(itemID) {
-          if (itemID == "about:icongrid") return "http://www.publicpress.org/images/about48.png"
+          window.open("http://www.google.com/search?q=" + itemID);
         },
 
-        getItemTitle: function(itemID) {
-          if (itemID == "about:icongrid") return "About IconGrid";
-        }
-
+        // if all your items have 'imgURL' and 'title' properties,
+        // then you don't need to implement these.
+        // These get called when an item doesn't have the right properties.
+        // Note that you can pass in data URIs for icons
+        getImgURL: function(itemID) {},
+        getTitle: function(itemID) {}
       };
 
       var hostElement = $("#clipper");
-      myLayout = new GridLayout(hostElement.width(), hostElement.height(), 3, 2);
-      myDash = new IconGrid("mydash", hostElement, html_datasource, myLayout);
+      var layout = new GridLayout(hostElement.width(), hostElement.height(), 3, 2);
+      var dashboard = new IconGrid("mydash", hostElement, datasource, layout);
 
-      myDash.initialize();
-      myDash.refresh();
-    });
+      dashboard.initialize();
+      dashboard.refresh();
+    };
   </script>
 </html>
