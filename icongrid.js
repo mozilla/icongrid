@@ -60,6 +60,10 @@ function GridLayout(width, height, columns, rows) {
 
 
 function IconGrid(name, hostElement, datasource, layout) {
+
+  this.recursionDetector = 0;
+  
+  this.CURRENT_PAGE = 0;
   // used for local storage identification
   this.dashname = name;
   // the jquery object that contains the dash
@@ -76,6 +80,12 @@ function IconGrid(name, hostElement, datasource, layout) {
 
   //the saved state (grid arrangement, mostly) for the dashboard
   this.dashboardState = {};
+
+  //scratch copies of pages used to move the icons around without altering the original config, 
+  // allowing 'cancel', which happens when you drag though a page to somewhere else, and we have to reset it
+  this.scratchPages = [];
+  //where icons are being animated to at this moment
+  this.inflightPages = [];
 
   //caches the constructed grid item panes for speed, and to stop poking the network all the time.
   this.gridItemCache = {};
@@ -118,8 +128,7 @@ function IconGrid(name, hostElement, datasource, layout) {
 IconGrid.prototype = {
   /////////////////////////////////////////////////////////
   getCurrentPage: function () {
-    var self = this;
-    return Math.floor(((Math.abs(self.dashboard.position().left)) + (self.layout.panelWidth / 2)) / self.layout.panelWidth);
+    return this.CURRENT_PAGE;
   },
 
   /////////////////////////////////////////////////////////
@@ -154,12 +163,26 @@ IconGrid.prototype = {
   // currently dragged item.  The resultant array is used to move the necessary items around in the page.
   arrangeAppsOnPageToFit: function (pageIdx, overSlot) {
     var self = this;
+
+    self.recursionDetector++;
+    if (self.recursionDetector > 1) console.log("DANGER! ARRANGEPAGE CALLED RECURSIVELY: " + self.recursionDetector);
+
     if (!self.dashboardState.pages[pageIdx]) {
       console.log("OWA: ERROR!!  non-existent page index: " + pageIdx);
+      self.recursionDetector--;
       return null;
     }
-    //get a copy of the page in question
-    var arrangedPage = self.dashboardState.pages[pageIdx].slice(0);
+    //use scratch pages to avoid allocation while dragging
+    if (!self.scratchPages[pageIdx]) self.scratchPages[pageIdx] = [];
+    if (!self.inflightPages[pageIdx]) self.inflightPages[pageIdx] = [];
+
+    var i;
+    for (i=0; i<self.dashboardState.pages[pageIdx].length; i++ )
+      self.scratchPages[pageIdx][i] = self.dashboardState.pages[pageIdx][i];
+
+    var arrangedPage = self.scratchPages[pageIdx];
+
+    //var arrangedPage = self.dashboardState.pages[pageIdx].slice(0);
 
     //do nothing if the overSlot is empty
     if (arrangedPage[overSlot]) {
@@ -204,20 +227,29 @@ IconGrid.prototype = {
       // now loop over all of the app signatures in the array, and tell each appDisplayFrame (from the cache) 
       // to animate to left = array slot * self.layout.itemBoxWidth
       var i;
+      var changed = false;
+      var pos;
+
       // NOTE: (self.layout.columnCount+1) here is important!  It pushes the rightmost one off the side of the page, so that it is hidden
       for (i = 0; i < (self.layout.rowCount * self.layout.columnCount) + 1; i++) {
-        if (arrangedPage[i]) {
-          var pos = self.positionForSlot(i);
-          if ((self.gridItemCache[arrangedPage[i]].position().left != pos.left) || (self.gridItemCache[arrangedPage[i]].position().top != pos.top)) {
+        changed = false;
+        if (arrangedPage[i] != this.inflightPages[pageIdx][i]) changed = true;
+
+          this.inflightPages[pageIdx][i] = arrangedPage[i];
+          if (arrangedPage[i] && changed) {
+            pos = self.positionForSlot(i);
+            console.log("redirected: " + i);
             self.gridItemCache[arrangedPage[i]].stop(true, false);
             self.gridItemCache[arrangedPage[i]].animate({
               left: pos.left,
               top: pos.top
             }, self.iconAnimationSpeed);
           }
-        }
+        //}
       }
     }
+
+    self.recursionDetector--;
 
     // return the modified page
     return arrangedPage;
@@ -336,7 +368,7 @@ IconGrid.prototype = {
 
     // give the user some forgiveness when pressing and holding. if they only move a couple of pixels, we will stillcount it as a hold.
     if (self._mouseDownHoldTimer) {
-      if (Math.abs(e.clientX - self._mouseDownX) > 4 || Math.abs(e.clientY - self._mouseDownY) > 4) {
+      if (Math.abs(e.clientX - self._mouseDownX) > 4 || Math.abs(e.clientY - self._mouseDownY) > 8) {
         clearTimeout(self._mouseDownHoldTimer);
         self._mouseDownHoldTimer = undefined;
       } else return;
@@ -439,6 +471,11 @@ IconGrid.prototype = {
 
       //temporarily add an extra blank page at the end, in case the user wants to spread things out
       self.addEmptyPageToDash();
+
+      //clear out the dragging temp pages
+      self.scratchPages = [];
+      self.inflightPages = [];
+
     }
   },
 
@@ -590,6 +627,7 @@ IconGrid.prototype = {
         }, 400);
       });
     }
+    this.CURRENT_PAGE = whichPage;
     return whichPage;
   },
 
