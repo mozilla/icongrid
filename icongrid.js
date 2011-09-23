@@ -61,7 +61,6 @@ function GridLayout(width, height, columns, rows) {
 
 function IconGrid(name, hostElement, datasource, layout) {
 
-  this.recursionDetector = 0;
   
   this.CURRENT_PAGE = 0;
   // used for local storage identification
@@ -164,12 +163,8 @@ IconGrid.prototype = {
   arrangeAppsOnPageToFit: function (pageIdx, overSlot) {
     var self = this;
 
-    self.recursionDetector++;
-    if (self.recursionDetector > 1) console.log("DANGER! ARRANGEPAGE CALLED RECURSIVELY: " + self.recursionDetector);
-
     if (!self.dashboardState.pages[pageIdx]) {
       console.log("OWA: ERROR!!  non-existent page index: " + pageIdx);
-      self.recursionDetector--;
       return null;
     }
     //use scratch pages to avoid allocation while dragging
@@ -238,7 +233,6 @@ IconGrid.prototype = {
           this.inflightPages[pageIdx][i] = arrangedPage[i];
           if (arrangedPage[i] && changed) {
             pos = self.positionForSlot(i);
-            console.log("redirected: " + i);
             self.gridItemCache[arrangedPage[i]].stop(true, false);
             self.gridItemCache[arrangedPage[i]].animate({
               left: pos.left,
@@ -248,8 +242,6 @@ IconGrid.prototype = {
         //}
       }
     }
-
-    self.recursionDetector--;
 
     // return the modified page
     return arrangedPage;
@@ -507,7 +499,6 @@ IconGrid.prototype = {
     self._mouseDownHoldTimer = undefined;
 
     var curPage = self.getCurrentPage();
-    // console.log("OWA: MOUSE UP!");
     if (self._draggedApp) {
 
       // user dropped the app on some page, not necessarily the one it originated on
