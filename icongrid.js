@@ -242,7 +242,6 @@ IconGrid.prototype = {
       }
     }
 
-
     // return the modified page
     return arrangedPage;
   },
@@ -499,7 +498,6 @@ IconGrid.prototype = {
     self._mouseDownHoldTimer = undefined;
 
     var curPage = self.getCurrentPage();
-    // console.log("OWA: MOUSE UP!");
     if (self._draggedApp) {
 
       // user dropped the app on some page, not necessarily the one it originated on
