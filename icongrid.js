@@ -101,6 +101,7 @@ function IconGrid(name, hostElement, datasource, layout) {
 
   //var _dashOffsetY;  //currently unused, since we don't support vertically scrolling dashboard at the moment
   this._appIcon;
+  this._appRemover;
   this._pageAnimating = false;
 
   //application dragging/rearranging globals  
@@ -150,6 +151,7 @@ IconGrid.prototype = {
     if (iconWrapper.hasClass("icon")) {
       self._appIcon = iconWrapper;
       self._appIcon.children(".iconshader").addClass("highlighted");
+      self._appRemover = $(e.target.parentNode.parentNode).children(".remover");
     }
   },
 
@@ -371,6 +373,9 @@ IconGrid.prototype = {
     // this is the -app- dragging code, which manages the necessary animations, the underlying data changes, and the possible paging to a different
     // dashboard page while carrying an app
     if (self._draggedApp) {
+            
+      self._appRemover.removeClass("showremover");
+
       // we are moving the appDisplayFrame from one coordinate system to another, so we need to computer an offset, so it doesn't jump away from the cursor
       var containerOffsetLeft = self.dashcontainer.offset().left;
       var containerOffsetTop = self.dashcontainer.offset().top;
@@ -443,8 +448,9 @@ IconGrid.prototype = {
     self._draggedApp = $(e.target.parentNode).attr("guid");
     //check to be sure we have one
     if (self._draggedApp) {
-        self._appIcon.children(".iconshader").removeClass("highlighted");
+      self._appIcon.children(".iconshader").removeClass("highlighted");
       self._appIcon.addClass("liftedApp");
+      self._appRemover.addClass("showremover");
 
       self._draggedAppOffsetX = self.extractNumber(self.gridItemCache[self._draggedApp].position().left);
       self._draggedAppOffsetY = self.extractNumber(self.gridItemCache[self._draggedApp].position().top);
@@ -507,7 +513,6 @@ IconGrid.prototype = {
       //    - if page was full before dropping, then all apps afterwards need to be shifted over, possibly changing every page afterward 
       // remove the drag highlighting  
       self._appIcon.removeClass("liftedApp");
-      self._appIcon = undefined;
 
       // get the correct arrangement of the current (dropped on) page
       var currentSlot = self.slotForPosition(self.gridItemCache[self._draggedApp].position().left, self.gridItemCache[self._draggedApp].position().top);
@@ -537,8 +542,25 @@ IconGrid.prototype = {
       }, self.iconAnimationSpeed);
       self.gridItemCache[self._draggedApp].css('z-index', self._draggedAppOrigZ);
 
+      if (self._appRemover.hasClass("showremover")) {
+        //they dropped it on the same slot, so check to see if they wanted to delete it
+        var guid = $(e.target.parentNode).attr("guid");
+
+        var itemTitle = self.gItems[guid].itemTitle;
+        if (!itemTitle && self.datasource.getItemTitle) { 
+          itemTitle = self.datasource.getItemTitle(Base32.decode(guid));
+        }
+
+        if (confirm("Uninstall " + itemTitle + "?")) {
+          self.datasource.removeItem(Base32.decode(guid));
+        }
+        self._appRemover.removeClass("showremover");
+      }
+
       // stop dragging 
+      self._appIcon = undefined;
       self._draggedApp = undefined;
+      self._appRemover = undefined;
           
       self.updatePageIndicator();
 
@@ -579,18 +601,11 @@ IconGrid.prototype = {
         self.goToPage(curPage, 250, function() { self.updatePageIndicator()});
 
       } else { // drag, which may or may not go to the next page
-        // console.log("OWA: dashboard dragged");
-        var snapPage = curPage;
-
+        var closestPage = 0;
         if (self.dashboard.position().left < 0) {
-          var offset = Math.abs(self.dashboard.position().left);
-          var remainder = offset - (curPage * self.layout.panelWidth);
-
-          if (remainder > Math.floor(self.layout.panelWidth / 2)) {
-            snapPage++;
-          }
+          closestPage = Math.floor((Math.abs(self.dashboard.position().left)  + self.layout.panelWidth/2)/ self.layout.panelWidth);
         }
-        self.goToPage(snapPage, 350, function() { self.updatePageIndicator()});
+        self.goToPage(closestPage, 350, function() { self.updatePageIndicator()});
       }
     }
 
@@ -891,6 +906,12 @@ IconGrid.prototype = {
 
     appDisplayFrame.append(clickyIcon);
 
+    var remover = $("<div>").addClass("remover").css({width: "32px", height: "32px", position: "absolute", top: "10px", left: "10px"});
+    var removerImg = $("<img>").css({width: "100%", height: "100%"});
+    removerImg.attr('src', "remover.png");
+    remover.append(removerImg);
+    appDisplayFrame.append(remover);
+
     //add the shader for selection
 
     var appName = $("<div/>").addClass("appLabel");
@@ -941,7 +962,8 @@ IconGrid.prototype = {
     // //prevent context menus
     (self.dashcontainer.get(0)).addEventListener("contextmenu", function (e) {
       e.preventDefault();
-    }, true);
+      e.stopPropagation();
+    }, false);
 
 
 
