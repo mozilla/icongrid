@@ -57,6 +57,13 @@
   opacity: 0.25;
 }
 
+.remover {
+  display: none;
+}
+
+.showremover {
+  display: block;
+}
 
 /* change if you'd like it to display differently */
 .icon {
