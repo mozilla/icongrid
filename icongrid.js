@@ -188,22 +188,20 @@ IconGrid.prototype = {
       // if we are unable to find a hole to the left, then find the closest one to the right of the dragged item.
       // if there are no holes to be found, then use a virtual hole that is off the end of the array to the right.
       //  we will fix the array up after the drop
-      var hole = (self.layout.rowCount * self.layout.columnCount);
+      var hole = undefined; //(self.layout.rowCount * self.layout.columnCount);
       var i;
-      //try to find a left hole
-      for (i = 0; i < overSlot; i++) {
+
+      //find the closest hole
+      for (i=0; i< (self.layout.rowCount * self.layout.columnCount); i++) {
         if (!arrangedPage[i]) {
-          hole = i;
-        }
-      }
-      //didnt find left hole, look for right
-      if (hole == (self.layout.rowCount * self.layout.columnCount)) {
-        for (i = (self.layout.rowCount * self.layout.columnCount) - 1; i > overSlot; i--) {
-          if (!arrangedPage[i]) {
+          if ((hole == undefined) || (Math.abs(overSlot - i) < Math.abs(overSlot - hole) )) {
             hole = i;
           }
         }
       }
+
+      //if we didn't find one, then it goes off the end
+      if (hole  == undefined) hole = (self.layout.rowCount * self.layout.columnCount);
 
       if (hole < overSlot) { //hole is to the left
         for (i = hole; i < overSlot; i++) {
@@ -251,6 +249,8 @@ IconGrid.prototype = {
   // make sure every appDisplayFrame on the page is where it is supposed to be
   redrawPage: function (page, animated) {
     var self = this;
+    //clean out the inflight cache pages, so that the page is back to a clean slate
+    self.inflightPages[page] = [];
     for (var i = 0; i < (self.layout.rowCount * self.layout.columnCount); i++) {
       if (self.dashboardState.pages[page][i]) {
         var pos = self.positionForSlot(i);
@@ -485,7 +485,7 @@ IconGrid.prototype = {
     if (self._draggedApp) {
       self._mouseDragoutTimer = setTimeout(function (evt) {
         self._onMouseUp(evt)
-      }, 410, e);
+      }, 500, e);
     } else {
       self._onMouseUp(e);
     }
@@ -958,13 +958,6 @@ IconGrid.prototype = {
     self.dashcontainer.append(self.pageindicator);
 
 
-    // //prevent context menus
-    (self.dashcontainer.get(0)).addEventListener("contextmenu", function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }, false);
-
-
 
     self.dashcontainer.mousedown(function (evt) {
       self.lastMouseEvent = evt;
@@ -986,7 +979,16 @@ IconGrid.prototype = {
     });
 
 
-    self.dashcontainer.get(0).addEventListener("touchstart", function(e) {
+    var dashDomObj = self.dashcontainer.get(0);
+
+    // //prevent context menus
+    dashDomObj.addEventListener("contextmenu", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
+
+
+    dashDomObj.addEventListener("touchstart", function(e) {
       if (e.touches && e.touches.length) {
         e.clientX = e.touches[0].clientX;
         e.clientY = e.touches[0].clientY;
@@ -996,7 +998,7 @@ IconGrid.prototype = {
 
     }, false);
 
-    self.dashcontainer.get(0).addEventListener("touchmove", function(e) {
+    dashDomObj.addEventListener("touchmove", function(e) {
       if (e.touches && e.touches.length) {
         e.clientX = e.touches[0].clientX;
         e.clientY = e.touches[0].clientY;
@@ -1005,7 +1007,7 @@ IconGrid.prototype = {
       self._onMouseMove(e);
     }, false);
 
-    self.dashcontainer.get(0).addEventListener("touchend", function(e) {
+    dashDomObj.addEventListener("touchend", function(e) {
       //cached last touch or move event
       self._onMouseUp(self.lastMouseEvent);
     }, false);
