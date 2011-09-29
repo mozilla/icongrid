@@ -132,13 +132,11 @@ IconGrid.prototype = {
 
   /////////////////////////////////////////////////////////
   _onMouseDown: function (e) {
+    console.log("mouse down");
     e.preventDefault();
     var self = this;
 
     self._mouseDownTime = e.timeStamp;
-    self._mouseDownHoldTimer = setTimeout(function (evt) {
-      self._onMouseHold(evt);
-    }, 1000, e);
 
     // grab the mouse position
     self._mouseDownX = e.clientX;
@@ -148,6 +146,11 @@ IconGrid.prototype = {
     self._dashboardScrollOffsetX = self.extractNumber(self.dashboard.position().left);
 
     if (iconWrapper.hasClass("icon")) {
+      //start the timer
+      self._mouseDownHoldTimer = setTimeout(function (evt) {
+      self._onMouseHold(evt);
+      }, 1000, e);
+
       self._appIcon = iconWrapper;
       self._appIcon.children(".iconshader").addClass("highlighted");
       self._appRemover = $(e.target.parentNode.parentNode).children(".remover");
@@ -348,6 +351,8 @@ IconGrid.prototype = {
   },
 
   _onMouseMove: function (e) {
+    //too noisy
+    //console.log("mouse move");
     var self = this;
 
     // slightly hokey caching of last mousemove event (the position is what we care about) for the case 
@@ -361,8 +366,9 @@ IconGrid.prototype = {
 
     // give the user some forgiveness when pressing and holding. if they only move a couple of pixels, we will stillcount it as a hold.
     if (self._mouseDownHoldTimer) {
-      if (Math.abs(e.clientX - self._mouseDownX) > 4 || Math.abs(e.clientY - self._mouseDownY) > 8) {
+      if (Math.abs(e.clientX - self._mouseDownX) > 10  || Math.abs(e.clientY - self._mouseDownY) > 10) {
         clearTimeout(self._mouseDownHoldTimer);
+        console.log("cleared hold timer due to large position change");
         self._mouseDownHoldTimer = undefined;
       } else return;
     }
@@ -374,10 +380,6 @@ IconGrid.prototype = {
     if (self._draggedApp) {
             
       self._appRemover.removeClass("showremover");
-
-      // we are moving the appDisplayFrame from one coordinate system to another, so we need to computer an offset, so it doesn't jump away from the cursor
-      var containerOffsetLeft = self.dashcontainer.offset().left;
-      var containerOffsetTop = self.dashcontainer.offset().top;
 
       var theDraggedItem = self.gridItemCache[self._draggedApp];
 
@@ -433,6 +435,7 @@ IconGrid.prototype = {
       self.dashboard.css("left", newPos);
 
       if (self._appIcon != undefined) {
+        console.log("removed app highlight in dashboard drag code");
         self._appIcon.children(".iconshader").removeClass("highlighted");
         self._appIcon = undefined;
       }
@@ -443,10 +446,16 @@ IconGrid.prototype = {
   // we can move it around between pages if necessary
   _onMouseHold: function (e) {
     var self = this;
+
+    console.log("mouse hold");
+    console.log("freed hold timer because it fired");
+    self._mouseDownHoldTimer = undefined;
+
     //keep track of the id of the app we are dragging.  this is also used as a flag to tell us we are dragging
     self._draggedApp = $(e.target.parentNode).attr("guid");
     //check to be sure we have one
     if (self._draggedApp) {
+      console.log("removed app highlight in mouse hold code");
       self._appIcon.children(".iconshader").removeClass("highlighted");
       self._appIcon.addClass("liftedApp");
       self._appRemover.addClass("showremover");
@@ -477,6 +486,7 @@ IconGrid.prototype = {
   },
 
   _onMouseLeave: function (e) {
+    console.log("mouse leave");
     var self = this;
     // for now, just treat it as a mouse up
     if (self._mouseDownTime == 0) {
@@ -492,11 +502,13 @@ IconGrid.prototype = {
   },
 
   _onMouseEnter: function (e) {
+    console.log("mouse enter");
     var self = this;
     clearTimeout(self._mouseDragoutTimer);
   },
 
   _onMouseUp: function (e) {
+    console.log("mouse up");
     e.preventDefault();
     var self = this;
 
@@ -580,6 +592,7 @@ IconGrid.prototype = {
 
       if (tap && (self._appIcon != undefined)) {
         // console.log("OWA: app launched");
+        console.log("removed app highlight in app launch code");
         self._appIcon.children(".iconshader").removeClass("highlighted");
         self._appIcon = undefined;
 
@@ -781,6 +794,41 @@ IconGrid.prototype = {
     self.updatePageIndicator();
   },
 
+
+  //sigh.  too many similar code paths
+  addItemToGrid: function(guid, newItem) {
+    var self = this;
+    guid = Base32.encode(guid);
+    //put it in the local object list
+    self.gItems[guid] = newItem;
+    //create the visual representation
+    self.gridItemCache[guid] = self.createGridItem(guid);
+    //insert the guid into the dashboard state and the dom object into the page
+    self.insertNewItemIntoDash(guid);
+  },
+
+
+  removeItemFromGrid: function(guid) {
+    var self = this;
+    guid = Base32.encode(guid);
+    //remove it from the dashboard state, and the cache, and the dashboard itself
+    delete self.gItems[guid];
+    //need to find it in the dashboardstate and erase it
+    var p, s;
+    for (p=0; p<self.dashboardState.pages.length; p++) {
+      for (s=0; s<self.dashboardState.pages[p].length; s++) {
+        if (self.dashboardState.pages[p][s] == guid) self.dashboardState.pages[p][s] = undefined;
+      }
+    }
+
+    if (self.gridItemCache[guid]) {
+      //remove the objects from the dom
+      self.gridItemCache[guid].remove();
+      //remove the slot from the cache
+      delete self.gridItemCache[guid];
+    }
+  },
+
   insertNewItemIntoDash: function (guid) {
     var self = this;
     //iterate through the pages, looking for the first empty slot.  create new pages if necessary
@@ -831,7 +879,6 @@ IconGrid.prototype = {
     self.updatePageIndicator();
   },
 
-
   updatePageIndicator: function () {
     var p;
     var self = this;
@@ -860,6 +907,7 @@ IconGrid.prototype = {
         indi.attr('src', "page.png");
       }
 
+      //FIX FIX!! Support touch events on page indicators.
       mark.append(indi);
       mark.click(makeGoToPageFunc(p));
       self.pageindicator.append(mark);
@@ -937,6 +985,11 @@ IconGrid.prototype = {
   initialize: function () {
     var self = this;
 
+    //tell the datasource how to notify us of updates
+    self.datasource.setRemovalCallback(function(guid) { self.removeItemFromGrid(guid)});
+
+    self.datasource.setAdditionCallback(function(guid, item) {self.addItemToGrid(guid, item)});
+
     self.dashboard = $("<div/>").addClass("dashboard");
     self.dashboard.css({
       width: self.layout.panelWidth,
@@ -983,6 +1036,7 @@ IconGrid.prototype = {
 
     // //prevent context menus
     dashDomObj.addEventListener("contextmenu", function (e) {
+      console.log("context menu blocked");
       e.preventDefault();
       e.stopPropagation();
     }, false);
