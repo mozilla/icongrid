@@ -563,7 +563,7 @@ IconGrid.prototype = {
         }
 
         if (confirm("Uninstall " + itemTitle + "?")) {
-          self.datasource.removeItem(Base32.decode(guid));
+          self.datasource.userRemovedItem(Base32.decode(guid));
         }
         self._appRemover.removeClass("showremover");
       }

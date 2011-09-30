@@ -154,11 +154,14 @@
             window.open("http://www.google.com/search?q=" + itemID);
         },
 
+        userRemovedItem: function(itemID) {
+          delete this.fruitlist[itemID];
+          this.removeItem(itemID);
+        },
+
         //remove the item from the database, and then call the removeItemFromGridCallback with the guid
         removeItem: function(itemID) {
           if (removeItemFromGridCallback == undefined) return;
-
-          delete this.fruitlist[itemID];
           removeItemFromGridCallback(itemID);
         },
 
