@@ -176,7 +176,7 @@ IconGrid.prototype = {
     if (!self.inflightPages[pageIdx]) self.inflightPages[pageIdx] = [];
 
     var i;
-    for (i=0; i<self.dashboardState.pages[pageIdx].length; i++ )
+    for (i=0; i<(self.layout.rowCount * self.layout.columnCount); i++ )
       self.scratchPages[pageIdx][i] = self.dashboardState.pages[pageIdx][i];
 
     var arrangedPage = self.scratchPages[pageIdx];
