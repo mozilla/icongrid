@@ -48,7 +48,7 @@
 }
 
 .liftedApp {
-  box-shadow: 2px 6px 10px 2px rgb(0, 0, 0);
+  box-shadow: 2px 6px 10px 2px rgb(0, 0, 0) !important;
   -webkit-box-shadow: 2px 6px 10px 2px rgb(0, 0, 0);
 }
       
@@ -67,6 +67,7 @@
 
 /* change if you'd like it to display differently */
 .icon {
+  padding: 8px;
   position: relative;
   width: 60%;
   height: 55%;
@@ -74,14 +75,13 @@
   margin-left: auto;
   margin-right: auto;
 
-	-moz-border-radius: 10%;
-	-webkit-border-radius: 10%;
-	border-radius: 10%;
-
-  background-image:         linear-gradient(top, #F5F5F5, #AFAFAF );
-  background-image:    -moz-linear-gradient(top, #F5F5F5, #AFAFAF );
-  background-image: -webkit-linear-gradient(top, #F5F5F5, #AFAFAF );
-  background-image: -webkit-gradient(linear, left top, left bottom, from(#F5F5F5), to(#AFAFAF) );
+  -moz-border-radius: 10%;
+  -webkit-border-radius: 10%;
+  border-radius: 10%;
+  background-color: #EEEEEE;
+  -webkit-box-shadow: inset 1px 1px 3px 1px #AAAAAA;
+  -moz-box-shadow: inset 1px 1px 3px 1px #AAAAAA;
+  box-shadow: inset 1px 1px 3px 1px #AAAAAA; 
 }
 
 .iconshader {
