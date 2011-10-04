@@ -132,7 +132,7 @@ IconGrid.prototype = {
 
   /////////////////////////////////////////////////////////
   _onMouseDown: function (e) {
-    console.log("mouse down");
+    //console.log("mouse down");
     e.preventDefault();
     var self = this;
 
@@ -168,7 +168,7 @@ IconGrid.prototype = {
     var self = this;
 
     if (!self.dashboardState.pages[pageIdx]) {
-      console.log("OWA: ERROR!!  non-existent page index: " + pageIdx);
+      //console.log("OWA: ERROR!!  non-existent page index: " + pageIdx);
       return null;
     }
     //use scratch pages to avoid allocation while dragging
@@ -352,7 +352,7 @@ IconGrid.prototype = {
 
   _onMouseMove: function (e) {
     //too noisy
-    //console.log("mouse move");
+    ////console.log("mouse move");
     var self = this;
 
     // slightly hokey caching of last mousemove event (the position is what we care about) for the case 
@@ -368,7 +368,7 @@ IconGrid.prototype = {
     if (self._mouseDownHoldTimer) {
       if (Math.abs(e.clientX - self._mouseDownX) > 10  || Math.abs(e.clientY - self._mouseDownY) > 10) {
         clearTimeout(self._mouseDownHoldTimer);
-        console.log("cleared hold timer due to large position change");
+        //console.log("cleared hold timer due to large position change");
         self._mouseDownHoldTimer = undefined;
       } else return;
     }
@@ -435,7 +435,7 @@ IconGrid.prototype = {
       self.dashboard.css("left", newPos);
 
       if (self._appIcon != undefined) {
-        console.log("removed app highlight in dashboard drag code");
+        //console.log("removed app highlight in dashboard drag code");
         self._appIcon.children(".iconshader").removeClass("highlighted");
         self._appIcon = undefined;
       }
@@ -447,15 +447,15 @@ IconGrid.prototype = {
   _onMouseHold: function (e) {
     var self = this;
 
-    console.log("mouse hold");
-    console.log("freed hold timer because it fired");
+    //console.log("mouse hold");
+    //console.log("freed hold timer because it fired");
     self._mouseDownHoldTimer = undefined;
 
     //keep track of the id of the app we are dragging.  this is also used as a flag to tell us we are dragging
     self._draggedApp = $(e.target.parentNode).attr("guid");
     //check to be sure we have one
     if (self._draggedApp) {
-      console.log("removed app highlight in mouse hold code");
+      //console.log("removed app highlight in mouse hold code");
       self._appIcon.children(".iconshader").removeClass("highlighted");
       self._appIcon.addClass("liftedApp");
       self._appRemover.addClass("showremover");
@@ -486,7 +486,7 @@ IconGrid.prototype = {
   },
 
   _onMouseLeave: function (e) {
-    console.log("mouse leave");
+    //console.log("mouse leave");
     var self = this;
     // for now, just treat it as a mouse up
     if (self._mouseDownTime == 0) {
@@ -502,13 +502,13 @@ IconGrid.prototype = {
   },
 
   _onMouseEnter: function (e) {
-    console.log("mouse enter");
+    //console.log("mouse enter");
     var self = this;
     clearTimeout(self._mouseDragoutTimer);
   },
 
   _onMouseUp: function (e) {
-    console.log("mouse up");
+    //console.log("mouse up");
     e.preventDefault();
     var self = this;
 
@@ -531,7 +531,7 @@ IconGrid.prototype = {
       var rearrangedApps = self.arrangeAppsOnPageToFit(curPage, currentSlot);
       // insert the app into the empty slot it is over, on the current page
       rearrangedApps[currentSlot] = self._draggedApp;
-      // console.log("OWA: DROPPED " + self._draggedApp + " IN SLOT " + currentSlot + " ON PAGE " + curPage)
+      // //console.log("OWA: DROPPED " + self._draggedApp + " IN SLOT " + currentSlot + " ON PAGE " + curPage)
       // overwrite the page in the dashboard state with the newly arranged page
       self.dashboardState.pages[curPage] = rearrangedApps;
       // DO LOTS OF FIXUP!!
@@ -591,8 +591,8 @@ IconGrid.prototype = {
       var drag = !quick;
 
       if (tap && (self._appIcon != undefined)) {
-        // console.log("OWA: app launched");
-        console.log("removed app highlight in app launch code");
+        // //console.log("OWA: app launched");
+        //console.log("removed app highlight in app launch code");
         self._appIcon.children(".iconshader").removeClass("highlighted");
         self._appIcon = undefined;
 
@@ -721,7 +721,7 @@ IconGrid.prototype = {
           self.gItems[guid] = {
             slot: [p, s]
           }; //remember where we found it
-          //console.log("found old app at: " + p + " " + s);
+          ////console.log("found old app at: " + p + " " + s);
         }
       }
     }
@@ -729,7 +729,7 @@ IconGrid.prototype = {
     //overlay the ones we have now
     for (guid in dataset) {
       self.gItems[guid] = dataset[guid];
-      //console.log("found new app: " + guid);
+      ////console.log("found new app: " + guid);
     }
 
     //remove the ones that are still marked with their former positions
@@ -737,7 +737,7 @@ IconGrid.prototype = {
       //check to see if it was deleted
       var slot = self.gItems[guid].slot;
       if (slot) {
-        //console.log("found deleted app: " + guid + " " + self.gItems[guid].slot);
+        ////console.log("found deleted app: " + guid + " " + self.gItems[guid].slot);
         //remove it from everywhere
         delete self.gItems[guid];
         self.dashboardState.pages[slot[0]][slot[1]] = undefined;
@@ -902,9 +902,9 @@ IconGrid.prototype = {
       
       var indi = $("<img width='" + Math.floor(self.layout.pageindicatorHeight * 0.8) + "' height='" + Math.floor(self.layout.pageindicatorHeight * 0.8) + "'/>");
       if (p ==currentPage) {
-        indi.attr('src', "page_cur.png");
+        indi.attr('src', "icongrid/page_cur.png");
       } else {
-        indi.attr('src', "page.png");
+        indi.attr('src', "icongrid/page.png");
       }
 
       //FIX FIX!! Support touch events on page indicators.
@@ -955,7 +955,7 @@ IconGrid.prototype = {
 
     var remover = $("<div>").addClass("remover").css({width: "32px", height: "32px", position: "absolute", top: "10px", left: "10px"});
     var removerImg = $("<img>").css({width: "100%", height: "100%"});
-    removerImg.attr('src', "remover.png");
+    removerImg.attr('src', "icongrid/remover.png");
     remover.append(removerImg);
     appDisplayFrame.append(remover);
 
@@ -1036,7 +1036,7 @@ IconGrid.prototype = {
 
     // //prevent context menus
     dashDomObj.addEventListener("contextmenu", function (e) {
-      console.log("context menu blocked");
+      //console.log("context menu blocked");
       e.preventDefault();
       e.stopPropagation();
     }, false);
