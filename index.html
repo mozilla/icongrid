@@ -33,7 +33,7 @@
       <div class="dashboardclipper" id="clipper" style="width: 400px; height: 300px;"></div>
     </div>
 
-    <P><INPUT TYPE="BUTTON" NAME="Add Item" Value="Add Item" onClick='addFooItem();'></P>
+    <P><INPUT TYPE="BUTTON" NAME="Add Item" Value="Add Item" onClick='addFooItem({});'></P>
 
 
     <h2>User Features</h2>
@@ -85,9 +85,11 @@
     var fruit_datasource;
     var fooCounter = 1;
 
-    function addFooItem() {
-      fruit_datasource.addItem({});
-    }
+    function addFooItem(theItem) {
+      var guid = "Foo "+ fooCounter++;
+      theItem.itemTitle = guid;
+      myDash.addItemToGrid(guid, theItem);
+    };
 
     $(document).ready(function() {
       fruit_datasource = {
@@ -127,19 +129,6 @@
           }
         },
 
-        //important callbacks for updates
-        removeItemFromGridCallback: undefined,
-
-
-        setRemovalCallback: function(callback) {
-          removeItemFromGridCallback = callback;
-        },
-
-        addItemToGridCallback: undefined,
-
-        setAdditionCallback: function(callback) {
-          addItemToGridCallback = callback;
-        },
 
         //gets the initial list of items.  ideally only called at start
         getItemList: function(callback) {
@@ -156,23 +145,13 @@
             window.open("http://www.google.com/search?q=" + itemID);
         },
 
-        userRemovedItem: function(itemID) {
+        userRemovedItem: function(itemID, callback) {
           delete this.fruitlist[itemID];
-          this.removeItem(itemID);
+          if (callback){
+            callback(itemID);
+          }
         },
 
-        //remove the item from the database, and then call the removeItemFromGridCallback with the guid
-        removeItem: function(itemID) {
-          if (removeItemFromGridCallback == undefined) return;
-          removeItemFromGridCallback(itemID);
-        },
-
-        addItem: function(theItem) {
-          if (addItemToGridCallback == undefined) return;
-          var guid = "Foo "+ fooCounter++;
-          theItem.itemTitle = guid;
-          addItemToGridCallback(guid, theItem);
-        },
 
         // if all your items have 'itemImgURL' and 'itemTitle' properties, then you don't need to implement these.
         // These get called when an item doesn't have the right properties.
@@ -193,6 +172,8 @@
 
       myDash.initialize();
       myDash.refresh();
+
     });
+
   </script>
 </html>

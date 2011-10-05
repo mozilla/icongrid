@@ -563,7 +563,7 @@ IconGrid.prototype = {
         }
 
         if (confirm("Uninstall " + itemTitle + "?")) {
-          self.datasource.userRemovedItem(Base32.decode(guid));
+          self.datasource.userRemovedItem(Base32.decode(guid), function(id) {self.removeItemFromGrid(id)});
         }
         self._appRemover.removeClass("showremover");
       }
@@ -984,11 +984,6 @@ IconGrid.prototype = {
 ///////////////////////////////////////////////////////////////////////////////////////////
   initialize: function () {
     var self = this;
-
-    //tell the datasource how to notify us of updates
-    self.datasource.setRemovalCallback(function(guid) { self.removeItemFromGrid(guid)});
-
-    self.datasource.setAdditionCallback(function(guid, item) {self.addItemToGrid(guid, item)});
 
     self.dashboard = $("<div/>").addClass("dashboard");
     self.dashboard.css({
