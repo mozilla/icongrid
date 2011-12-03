@@ -168,7 +168,7 @@ IconGrid.prototype = {
     var self = this;
 
     if (!self.dashboardState.pages[pageIdx]) {
-      //console.log("OWA: ERROR!!  non-existent page index: " + pageIdx);
+      console.log("OWA: ERROR!!  non-existent page index: " + pageIdx);
       return null;
     }
     //use scratch pages to avoid allocation while dragging
@@ -351,8 +351,8 @@ IconGrid.prototype = {
   },
 
   _onMouseMove: function (e) {
-    //too noisy
-    ////console.log("mouse move");
+    //very noisy
+    //console.log("mouse move");
     var self = this;
 
     // slightly hokey caching of last mousemove event (the position is what we care about) for the case 
@@ -927,18 +927,20 @@ IconGrid.prototype = {
 
     var clickyIcon = $("<div/>").addClass("icon");
     clickyIcon.attr("guid", guid);
-
-
-    clickyIcon.css({
-
-    });
+    clickyIcon.css({ });
 
     //first see if the item itself has an 'imgURL'
-    var imgURL = theItem.itemImgURL;
-    //if it doesn't, ask the datasource for it
-    if (!imgURL && self.datasource.getItemImgURL) {
-      imgURL = self.datasource.getItemImgURL(Base32.decode(guid));
+    var imgURL;
+    try {
+      if (theItem && theItem.itemImgURL) {
+        imgURL = theItem.itemImgURL;
+      } else if (self.datasource.getItemImgURL) {
+        imgURL = self.datasource.getItemImgURL(Base32.decode(guid));
+      }
+    } catch (e) {
+      console.log("exception getting icon for guid: " + guid + " : " + e);
     }
+
     //if we still don't have one, use a generic gray icon as a placeholder
     if (!imgURL) {
       imgURL = "data:image/png;base64,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";
@@ -963,11 +965,19 @@ IconGrid.prototype = {
 
     var appName = $("<div/>").addClass("appLabel");
 
-    var itemTitle = theItem.itemTitle;
-    if (!itemTitle && self.datasource.getItemTitle) { 
-      itemTitle = self.datasource.getItemTitle(Base32.decode(guid));
+    var itemTitle;
+    try {
+      if (theItem && theItem.itemTitle) {
+        itemTitle = theItem.itemTitle;
+      } else if (self.datasource.getItemTitle) {
+        itemTitle = self.datasource.getItemTitle(Base32.decode(guid));
+      }
+    } catch (e) {
+      console.log("exception getting title for guid: " + guid + " : " + e);
     }
+
     if (!itemTitle) itemTitle = "";
+    
 
     appName.text(itemTitle);
     appDisplayFrame.append(appName);
@@ -984,6 +994,10 @@ IconGrid.prototype = {
 ///////////////////////////////////////////////////////////////////////////////////////////
   initialize: function () {
     var self = this;
+
+
+    // check for document.createTouch?
+
 
     self.dashboard = $("<div/>").addClass("dashboard");
     self.dashboard.css({
@@ -1008,6 +1022,7 @@ IconGrid.prototype = {
 
 
     self.dashcontainer.mousedown(function (evt) {
+      // console.log("mouse down");
       self.lastMouseEvent = evt;
       self._onMouseDown(evt);
     });
@@ -1016,13 +1031,16 @@ IconGrid.prototype = {
       self._onMouseMove(evt);
     });
     self.dashcontainer.mouseup(function (evt) {
+      // console.log("mouse up");
       self._onMouseUp(evt);
     });
 
     self.dashcontainer.mouseleave(function (evt) {
+      // console.log("mouse leave");
       self._onMouseLeave(evt);
     });
     self.dashcontainer.mouseenter(function (evt) {
+      // console.log("mouse enter");
       self._onMouseEnter(evt);
     });
 
@@ -1042,6 +1060,7 @@ IconGrid.prototype = {
         e.clientX = e.touches[0].clientX;
         e.clientY = e.touches[0].clientY;
       }
+      // console.log("touch down: "+ e.clientX + " : " + e.clientY);
       self.lastMouseEvent = e;
       self._onMouseDown(e);
 
@@ -1058,6 +1077,7 @@ IconGrid.prototype = {
 
     dashDomObj.addEventListener("touchend", function(e) {
       //cached last touch or move event
+      // console.log("touch up: "+ self.lastMouseEvent.clientX + " : " + self.lastMouseEvent.clientY);
       self._onMouseUp(self.lastMouseEvent);
     }, false);
 
