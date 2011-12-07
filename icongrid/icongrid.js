@@ -827,6 +827,11 @@ IconGrid.prototype = {
       //remove the slot from the cache
       delete self.gridItemCache[guid];
     }
+    //need to remove possible empty pages here...
+    var curPage = self.getCurrentPage();
+    self.fixUpPageOverflows(0);
+    //in case the page has disappeared out from under us, this will leave us on the last page
+    self.goToPage(curPage, 250, function() { self.updatePageIndicator()});
   },
 
   insertNewItemIntoDash: function (guid) {
