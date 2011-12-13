@@ -795,16 +795,21 @@ IconGrid.prototype = {
   },
 
 
-  //sigh.  too many similar code paths
+  //sigh.  too many similar code paths. returns true if it was actually added, false if it was updated.
   addItemToGrid: function(guid, newItem) {
     var self = this;
     guid = Base32.encode(guid);
+    var isNew = !(guid in self.gItems);
     //put it in the local object list
     self.gItems[guid] = newItem;
-    //create the visual representation
-    self.gridItemCache[guid] = self.createGridItem(guid);
-    //insert the guid into the dashboard state and the dom object into the page
-    self.insertNewItemIntoDash(guid);
+
+    if (isNew) {
+      //create the visual representation
+      self.gridItemCache[guid] = self.createGridItem(guid);
+      //insert the guid into the dashboard state and the dom object into the page
+      self.insertNewItemIntoDash(guid);
+    }
+    return isNew;
   },
 
 
