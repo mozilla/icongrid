@@ -168,7 +168,7 @@ IconGrid.prototype = {
     var self = this;
 
     if (!self.dashboardState.pages[pageIdx]) {
-      console.log("OWA: ERROR!!  non-existent page index: " + pageIdx);
+      console.log("DASHBOARD ERROR!!  non-existent page index: " + pageIdx);
       return null;
     }
     //use scratch pages to avoid allocation while dragging
@@ -691,7 +691,7 @@ IconGrid.prototype = {
     // this is the function called by both the navigator.apps callback or the jetpack callback when the dashboard state loads
     // we immediately turn around and load the app list.
     if (newState) self.dashboardState = newState;
-    if (!self.dashboardState.pages) self.dashboardState.pages = [];
+    if (!self.dashboardState.pages) self.dashboardState.pages = [[]];
       
     self.datasource.getItemList(function (theList) {
       self.refreshGrid(theList);
@@ -711,7 +711,7 @@ IconGrid.prototype = {
     var p, s;
     self.gItems = {};
 
-    if (!self.dashboardState.pages) self.dashboardState.pages = [];
+    if (!self.dashboardState.pages) self.dashboardState.pages = [[]];
 
     // record the ones we had last time
     for (p = 0; p < self.dashboardState.pages.length; p++) {
@@ -835,6 +835,7 @@ IconGrid.prototype = {
     //need to remove possible empty pages here...
     var curPage = self.getCurrentPage();
     self.fixUpPageOverflows(0);
+    self.saveIconGridState(self.dashname, self.dashboardState);
     //in case the page has disappeared out from under us, this will leave us on the last page
     self.goToPage(curPage, 250, function() { self.updatePageIndicator()});
   },
