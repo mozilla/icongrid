@@ -78,6 +78,7 @@ function IconGrid(name, hostElement, datasource, layout) {
 
   //the saved state (grid arrangement, mostly) for the dashboard
   this.dashboardState = {};
+  this.dashboardState.pages = [[]];
 
   //scratch copies of pages used to move the icons around without altering the original config, 
   // allowing 'cancel', which happens when you drag though a page to somewhere else, and we have to reset it
@@ -1030,6 +1031,7 @@ IconGrid.prototype = {
     self.dashcontainer.append(self.dashboard);
     self.dashcontainer.append(self.pageindicator);
 
+    self.updatePageIndicator();
 
 
     self.dashcontainer.mousedown(function (evt) {
